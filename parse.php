@@ -23,3 +23,9 @@ if ($argc==2) {
         exit(10);
     }
 }
+
+$InputControl = @fopen('php://stdin', "r");
+if (!$InputControl) {
+    fwrite(STDERR, "Error reading input file!\n");
+    exit(11);
+}
