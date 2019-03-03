@@ -45,6 +45,16 @@ $keywords = [
     'BREAK'
 ];
 
+/*Regexy*/
+//symb - var,int, c_bool, bool, string
+//type - int, c_bool, bool, string
+$var = "/^(?:GF|LF|TF)@[A-Za-z\-\_\*\$%&][\w\-\*\_\$%&]*$/";
+$int = "/^int@[+-]?\d+$/";  // moe byt prazdny int ?
+$c_bool = "/^bool@$/";
+$bool = "/^bool@(?:true|false)$/i";
+$string = '/(string@)([[:alnum:]]*[\&\%\_\-\*\+\^\<\>\$]*(\\[0-9]{3})*)*/u';
+$label = "/^[A-Za-z\-\_\*\$%&][\w\-\_\*\$%&]*$/";
+
 /*Kontrola vstupných argumentov*/
 if ($argc>2) {
     fwrite(STDERR, "Error: Too many arguments!\n");
@@ -120,7 +130,7 @@ while($line = fgets($InputControl)){
         }
 
         switch ($SavedArray[0]){
-            case 'MOVE':
+            case 'MOVE': //<var> <symb>
             case 'INT2CHAR':
             case 'STRLEN':
             case 'TYPE':
@@ -131,19 +141,40 @@ while($line = fgets($InputControl)){
                 $instrElem -> setAttribute('opcode', $SavedArray[0]);
                 $progElem -> appendChild($instrElem);
 
+                /*---FIRST ARGUMENT---*/
+
+                if(!isset($SavedArray[1])) { //je za klučovým slovom(MOVE) niečo ďalšie(premenné/konštanty atď) ?
+                    fwrite(STDERR, "Error: Variable is missing!\n");
+                    exit(23);
+                }
+                if (!preg_match($var, $SavedArray[1])) { //je to ďalšie to čo to má byť ?
+                    fwrite(STDERR, "Error: $var is not a valid operand of instruction: $TempVar !\n");
+                    exit(23);
+                }
+                else{
+                    $arg1Elem = $dom->createElement('arg1', htmlspecialchars($SavedArray[1]));
+                    $arg1Elem->SetAttribute('type', 'var');
+                    $instrElem->appendChild($arg1Elem);
+                }
+
+                /*---NEXT ARGUMENT---*/
 
 
 
 
 
+
+
+                //TODO: <symb> GOES HERE!!!
 
 
 
 
 
                 break;
+            /*---END OF INSTRUCTION---*/
 
-            case 'CREATEFRAME':
+            case 'CREATEFRAME': //nothing
             case 'PUSHFRAME':
             case 'POPFRAME':
             case 'RETURN':
@@ -159,6 +190,84 @@ while($line = fgets($InputControl)){
                     exit(23);
                 }
                 break;
+            /*---END OF INSTRUCTION---*/
+
+            case 'DEFVAR': //<var>
+            case 'POPS':
+                $instrCounter += 1;
+                $instrElem = $dom->createElement('instruction');
+                $instrElem -> setAttribute('order', $instrCounter);
+                $instrElem -> setAttribute('opcode', $SavedArray[0]);
+                $progElem -> appendChild($instrElem);
+
+                /*---FIRST ARGUMENT---*/
+
+                if(!isset($SavedArray[1])) {
+                    fwrite(STDERR, "Error: Variable is missing!\n");
+                    exit(23);
+                }
+                if (!preg_match($var, $SavedArray[1])) {
+                    fwrite(STDERR, "Error: $var is not a valid operand of instruction: $TempVar !\n");
+                    exit(23);
+                }
+                else{
+                    $arg1Elem = $dom->createElement('arg1', htmlspecialchars($SavedArray[1]));
+                    $arg1Elem->SetAttribute('type', 'var');
+                    $instrElem->appendChild($arg1Elem);
+                }
+                break;
+            /*---END OF INSTRUCTION---*/
+
+            case 'ADD':
+            case 'SUB':
+            case 'MUL':
+            case 'IDIV':
+            case 'LT':
+            case 'GT':
+            case 'EQ':
+            case 'AND':
+            case 'OR':
+            case 'STRI2INT':
+            case 'CONCAT':
+            case 'GETCHAT':
+            case 'SETCHAR':
+                $instrCounter += 1;
+                $instrElem = $dom->createElement('instruction');
+                $instrElem -> setAttribute('order', $instrCounter);
+                $instrElem -> setAttribute('opcode', $SavedArray[0]);
+                $progElem -> appendChild($instrElem);
+
+                /*---FIRST ARGUMENT---*/
+
+                if(!isset($SavedArray[1])) {
+                    fwrite(STDERR, "Error: Variable is missing!\n");
+                    exit(23);
+                }
+                if (!preg_match($var, $SavedArray[1])) {
+                    fwrite(STDERR, "Error: $var is not a valid operand of instruction: $TempVar !\n");
+                    exit(23);
+                }
+                else{
+                    $arg1Elem = $dom->createElement('arg1', htmlspecialchars($SavedArray[1]));
+                    $arg1Elem->SetAttribute('type', 'var');
+                    $instrElem->appendChild($arg1Elem);
+                }
+
+                /*---SECOND ARGUMENT---*/
+
+
+                //TODO: <symb1> GOES HERE !!!
+
+
+
+                /*---THIRD ARGUMENT---*/
+
+                //TODO: <symb2> GOES HERE !!!
+
+
+
+                break;
+            /*---END OF INSTRUCTION---*/
 
 
 
