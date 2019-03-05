@@ -46,14 +46,15 @@ $keywords = [
 ];
 
 /*Regexy*/
-//symb - var,int, c_bool, bool, string
+//symb - var,int, c_bool, bool, string, nil
 //type - int, c_bool, bool, string
 $var = "/^(?:GF|LF|TF)@[A-Za-z\-\_\*\$%&][\w\-\*\_\$%&]*$/";
-$int = "/^int@[+-]?\d+$/";  // moe byt prazdny int ?
+$int = "/^int@[+-]?\d+$/";
 $c_bool = "/^bool@$/";
-$bool = "/^bool@(?:true|false)$/i";
+$bool = "/^bool@(?:true|false)$/";
 $string = '/(string@)([[:alnum:]]*[\&\%\_\-\*\+\^\<\>\$]*(\\[0-9]{3})*)*/u';
 $label = "/^[A-Za-z\-\_\*\$%&][\w\-\_\*\$%&]*$/";
+$nil = "/^nil@nil$/";
 
 /*Kontrola vstupných argumentov*/
 if ($argc>2) {
@@ -114,7 +115,7 @@ while($line = fgets($InputControl)){
     if(!preg_match("/^\s*$/", $line)) { //ak su biele znaky na riadku tak...
         $SavedArray = array_filter(preg_split("/\s+/", $line)); //uložíme riadok do poľa orezany podla bielych znakov ktore sme ale zahodili
 
-        $TempVar=$SavedArray[0];//Len uloženie do pomocnej premennej kvoli vypisu chyby
+        $Temp=$SavedArray[0];//Len uloženie do pomocnej premennej kvoli vypisu chyby
 
         //Kontrola či prvý string/slovo na riadku je inštrukcia z poľa $keywords
         $SavedArray[0]=strtoupper($SavedArray[0]); //zo zadania NEpodstatná zmena na uppercase aby bolo ľahšie porovnanie stringu
@@ -125,7 +126,7 @@ while($line = fgets($InputControl)){
         }
 
         if (!$IsKeyword){
-            fwrite(STDERR, "Error: $TempVar is not an instruction!\n");
+            fwrite(STDERR, "Error: $Temp is not an instruction!\n");
             exit(22);
         }
 
@@ -147,8 +148,9 @@ while($line = fgets($InputControl)){
                     fwrite(STDERR, "Error: Variable is missing!\n");
                     exit(23);
                 }
+
                 if (!preg_match($var, $SavedArray[1])) { //je to ďalšie to čo to má byť ?
-                    fwrite(STDERR, "Error: $var is not a valid operand of instruction: $TempVar !\n");
+                    fwrite(STDERR, "Error: $SavedArray[1] is not a valid operand of instruction: $Temp !\n");
                     exit(23);
                 }
                 else{
@@ -159,19 +161,52 @@ while($line = fgets($InputControl)){
 
                 /*---NEXT ARGUMENT---*/
 
+                if(!isset($SavedArray[2])) {
+                    fwrite(STDERR, "Error: Symbol is missing!\n");
+                    exit(23);
+                }
+                if (!((preg_match($var, $SavedArray[2])) || (preg_match($int, $SavedArray[2])) || (preg_match($c_bool, $SavedArray[2])) || (preg_match($bool, $SavedArray[2])) || (preg_match($string, $SavedArray[2]) || (preg_match($nil, $SavedArray[2]))))) {
+                    fwrite(STDERR, "Error: $SavedArray[2] is not a valid operand of instruction: $Temp !\n");
+                    exit(23);
+                }
+                else{
+                    $ArgType = strstr($SavedArray[2], '@', true);
+                    $ArgLeng = strlen($ArgType)+1;
 
+                    if (!($ArgType == 'GF' || $ArgType == 'LF' || $ArgType == 'TF')) {
+                        $Arg2Elem = $dom->createElement('arg2', htmlspecialchars(substr($SavedArray[2], $ArgLeng, strlen(htmlspecialchars($SavedArray[2])))));
+                    }
+                    else{
+                        $Arg2Elem = $dom->createElement('arg2', htmlspecialchars($SavedArray[2]));
+                    }
 
+                    if ($ArgType == 'GF' || $ArgType == 'LF' || $ArgType == 'TF') {
+                        $Arg2Elem->SetAttribute('type', 'var');
+                    }
+                    elseif ($ArgType == 'int') {
+                        $Arg2Elem->SetAttribute('type', 'int');
+                    }
+                    elseif ($ArgType == 'bool') {
+                        $Arg2Elem->SetAttribute('type', 'bool');
+                    }
+                    elseif ($ArgType == 'string') {
+                        $Arg2Elem->SetAttribute('type', 'string');
+                    }
+                    elseif ($ArgType == 'nil') {
+                        $Arg2Elem->SetAttribute('type', 'nil');
+                    }
+                    $instrElem->appendChild($Arg2Elem);
+                    //ak áno tak generujeme (pomocou SavedArray2) ďalej do xml arg2 do instruction
+                }
 
+                /*---MAX ARGUMENTS REACHED---*/
 
-
-
-                //TODO: <symb> GOES HERE!!!
-
-
-
-
-
+                if(isset($SavedArray[3])) {
+                    fwrite(STDERR, "Error: Instruction $Temp has too many arguments!\n");
+                    exit(23);
+                }
                 break;
+
             /*---END OF INSTRUCTION---*/
 
             case 'CREATEFRAME': //nothing
@@ -185,8 +220,10 @@ while($line = fgets($InputControl)){
                 $instrElem -> setAttribute('opcode', $SavedArray[0]);
                 $progElem -> appendChild($instrElem);
 
+                /*---MAX ARGUMENTS REACHED---*/
+
                 if(isset($SavedArray[1])) {
-                    fwrite(STDERR, "Error: Instruction $TempVar has too many arguments!\n");
+                    fwrite(STDERR, "Error: Instruction $Temp has too many arguments!\n");
                     exit(23);
                 }
                 break;
@@ -207,13 +244,20 @@ while($line = fgets($InputControl)){
                     exit(23);
                 }
                 if (!preg_match($var, $SavedArray[1])) {
-                    fwrite(STDERR, "Error: $var is not a valid operand of instruction: $TempVar !\n");
+                    fwrite(STDERR, "Error: $SavedArray[1] is not a valid operand of instruction: $Temp !\n");
                     exit(23);
                 }
                 else{
                     $arg1Elem = $dom->createElement('arg1', htmlspecialchars($SavedArray[1]));
                     $arg1Elem->SetAttribute('type', 'var');
                     $instrElem->appendChild($arg1Elem);
+                }
+
+                /*---MAX ARGUMENTS REACHED---*/
+
+                if(isset($SavedArray[2])) {
+                    fwrite(STDERR, "Error: Instruction $Temp has too many arguments!\n");
+                    exit(23);
                 }
                 break;
             /*---END OF INSTRUCTION---*/
@@ -244,7 +288,7 @@ while($line = fgets($InputControl)){
                     exit(23);
                 }
                 if (!preg_match($var, $SavedArray[1])) {
-                    fwrite(STDERR, "Error: $var is not a valid operand of instruction: $TempVar !\n");
+                    fwrite(STDERR, "Error: $SavedArray[1] is not a valid operand of instruction: $Temp !\n");
                     exit(23);
                 }
                 else{
@@ -262,12 +306,72 @@ while($line = fgets($InputControl)){
 
                 /*---THIRD ARGUMENT---*/
 
-                //TODO: <symb2> GOES HERE !!!
+                //TODO: <symb2> GOES HERE !!! + TOO many arguments function
 
 
+
+                /*---MAX ARGUMENTS REACHED---*/
 
                 break;
             /*---END OF INSTRUCTION---*/
+
+            case 'PUSHS':
+            case 'WRITE':
+            case 'EXIT':
+            case 'DPRINT':
+                $instrCounter += 1;
+                $instrElem = $dom->createElement('instruction');
+                $instrElem -> setAttribute('order', $instrCounter);
+                $instrElem -> setAttribute('opcode', $SavedArray[0]);
+                $progElem -> appendChild($instrElem);
+
+                if(!isset($SavedArray[1])) {
+                    fwrite(STDERR, "Error: Symbol is missing!\n");
+                    exit(23);
+                }
+                if (!((preg_match($var, $SavedArray[1])) || (preg_match($int, $SavedArray[1])) || (preg_match($c_bool, $SavedArray[1])) || (preg_match($bool, $SavedArray[1])) || (preg_match($string, $SavedArray[1]) || (preg_match($nil, $SavedArray[1]))))) {
+                    fwrite(STDERR, "Error: $SavedArray[1] is not a valid operand of instruction: $Temp !\n");
+                    exit(23);
+                }
+                else{
+                    $ArgType = strstr($SavedArray[1], '@', true);
+                    $ArgLeng = strlen($ArgType)+1;
+
+                    if (!($ArgType == 'GF' || $ArgType == 'LF' || $ArgType == 'TF')) {
+                        $Arg1Elem = $dom->createElement('arg1', htmlspecialchars(substr($SavedArray[1], $ArgLeng, strlen(htmlspecialchars($SavedArray[1])))));
+                    }
+                    else{
+                        $Arg1Elem = $dom->createElement('arg1', htmlspecialchars($SavedArray[1]));
+                    }
+
+                    if ($ArgType == 'GF' || $ArgType == 'LF' || $ArgType == 'TF') {
+                        $Arg1Elem->SetAttribute('type', 'var');
+                    }
+                    elseif ($ArgType == 'int') {
+                        $Arg1Elem->SetAttribute('type', 'int');
+                    }
+                    elseif ($ArgType == 'bool') {
+                        $Arg1Elem->SetAttribute('type', 'bool');
+                    }
+                    elseif ($ArgType == 'string') {
+                        $Arg1Elem->SetAttribute('type', 'string');
+                    }
+                    elseif ($ArgType == 'nil') {
+                        $Arg1Elem->SetAttribute('type', 'nil');
+                    }
+                    $instrElem->appendChild($Arg1Elem);
+                }
+
+                /*---MAX ARGUMENTS REACHED---*/
+
+                if(isset($SavedArray[2])) {
+                    fwrite(STDERR, "Error: Instruction $Temp has too many arguments!\n");
+                    exit(23);
+                }
+                break;
+
+
+
 
 
 
