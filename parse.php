@@ -263,41 +263,103 @@ while ($line = fgets($InputControl)) {
             case 'CONCAT':
             case 'GETCHAT':
             case 'SETCHAR':
-                $instrCounter += 1;
-                $instrElem = $dom->createElement('instruction');
-                $instrElem->setAttribute('order', $instrCounter);
-                $instrElem->setAttribute('opcode', $SavedArray[0]);
-                $progElem->appendChild($instrElem);
+            $instrCounter += 1;
+            $instrElem = $dom->createElement('instruction');
+            $instrElem->setAttribute('order', $instrCounter);
+            $instrElem->setAttribute('opcode', $SavedArray[0]);
+            $progElem->appendChild($instrElem);
 
-                /*---FIRST ARGUMENT---*/
+            /*---FIRST ARGUMENT---*/
 
-                if (!isset($SavedArray[1])) {
-                    fwrite(STDERR, "Error: Variable is missing!\n");
-                    exit(23);
-                }
-                if (!preg_match($var, $SavedArray[1])) {
-                    fwrite(STDERR, "Error: $SavedArray[1] is not a valid operand of instruction: $Temp !\n");
-                    exit(23);
+            if (!isset($SavedArray[1])) { //je za klučovým slovom(MOVE) niečo ďalšie(premenné/konštanty atď) ?
+                fwrite(STDERR, "Error: Variable is missing!\n");
+                exit(23);
+            }
+
+            if (!preg_match($var, $SavedArray[1])) { //je to ďalšie to čo to má byť ?
+                fwrite(STDERR, "Error: $SavedArray[1] is not a valid operand of instruction: $Temp !\n");
+                exit(23);
+            } else {
+                $arg1Elem = $dom->createElement('arg1', htmlspecialchars($SavedArray[1]));
+                $arg1Elem->SetAttribute('type', 'var');
+                $instrElem->appendChild($arg1Elem);
+            }
+
+            /*---NEXT ARGUMENT---*/
+
+            if (!isset($SavedArray[2])) {
+                fwrite(STDERR, "Error: First symbol is missing!\n");
+                exit(23);
+            }
+            if (!((preg_match($var, $SavedArray[2])) || (preg_match($int, $SavedArray[2])) || (preg_match($c_bool, $SavedArray[2])) || (preg_match($bool, $SavedArray[2])) || (preg_match($string, $SavedArray[2]) || (preg_match($nil, $SavedArray[2]))))) {
+                fwrite(STDERR, "Error: $SavedArray[2] is not a valid operand of instruction: $Temp !\n");
+                exit(23);
+            } else {
+                $ArgType = strstr($SavedArray[2], '@', true);
+                $ArgLeng = strlen($ArgType) + 1;
+
+                if (!($ArgType == 'GF' || $ArgType == 'LF' || $ArgType == 'TF')) {
+                    $Arg2Elem = $dom->createElement('arg2', htmlspecialchars(substr($SavedArray[2], $ArgLeng, strlen(htmlspecialchars($SavedArray[2])))));
                 } else {
-                    $arg1Elem = $dom->createElement('arg1', htmlspecialchars($SavedArray[1]));
-                    $arg1Elem->SetAttribute('type', 'var');
-                    $instrElem->appendChild($arg1Elem);
+                    $Arg2Elem = $dom->createElement('arg2', htmlspecialchars($SavedArray[2]));
                 }
 
-                /*---SECOND ARGUMENT---*/
+                if ($ArgType == 'GF' || $ArgType == 'LF' || $ArgType == 'TF') {
+                    $Arg2Elem->SetAttribute('type', 'var');
+                } elseif ($ArgType == 'int') {
+                    $Arg2Elem->SetAttribute('type', 'int');
+                } elseif ($ArgType == 'bool') {
+                    $Arg2Elem->SetAttribute('type', 'bool');
+                } elseif ($ArgType == 'string') {
+                    $Arg2Elem->SetAttribute('type', 'string');
+                } elseif ($ArgType == 'nil') {
+                    $Arg2Elem->SetAttribute('type', 'nil');
+                }
+                $instrElem->appendChild($Arg2Elem);
+                //ak áno tak generujeme (pomocou SavedArray2) ďalej do xml arg2 do instruction
+            }
 
+            /*---NEXT ARGUMENT---*/
 
-                //TODO: <symb1> GOES HERE !!!
+            if (!isset($SavedArray[3])) {
+                fwrite(STDERR, "Error: Second symbol is missing!\n");
+                exit(23);
+            }
+            if (!((preg_match($var, $SavedArray[3])) || (preg_match($int, $SavedArray[3])) || (preg_match($c_bool, $SavedArray[3])) || (preg_match($bool, $SavedArray[3])) || (preg_match($string, $SavedArray[3]) || (preg_match($nil, $SavedArray[3]))))) {
+                fwrite(STDERR, "Error: $SavedArray[3] is not a valid operand of instruction: $Temp !\n");
+                exit(23);
+            } else {
+                $ArgType = strstr($SavedArray[3], '@', true);
+                $ArgLeng = strlen($ArgType) + 1;
 
+                if (!($ArgType == 'GF' || $ArgType == 'LF' || $ArgType == 'TF')) {
+                    $Arg3Elem = $dom->createElement('arg3', htmlspecialchars(substr($SavedArray[3], $ArgLeng, strlen(htmlspecialchars($SavedArray[3])))));
+                } else {
+                    $Arg3Elem = $dom->createElement('arg3', htmlspecialchars($SavedArray[3]));
+                }
 
-                /*---THIRD ARGUMENT---*/
+                if ($ArgType == 'GF' || $ArgType == 'LF' || $ArgType == 'TF') {
+                    $Arg3Elem->SetAttribute('type', 'var');
+                } elseif ($ArgType == 'int') {
+                    $Arg3Elem->SetAttribute('type', 'int');
+                } elseif ($ArgType == 'bool') {
+                    $Arg3Elem->SetAttribute('type', 'bool');
+                } elseif ($ArgType == 'string') {
+                    $Arg3Elem->SetAttribute('type', 'string');
+                } elseif ($ArgType == 'nil') {
+                    $Arg3Elem->SetAttribute('type', 'nil');
+                }
+                $instrElem->appendChild($Arg3Elem);
+                //ak áno tak generujeme (pomocou SavedArray2) ďalej do xml arg2 do instruction
+            }
 
-                //TODO: <symb2> GOES HERE !!! + TOO many arguments function
+            /*---MAX ARGUMENTS REACHED---*/
 
-
-                /*---MAX ARGUMENTS REACHED---*/
-
-                break;
+            if (isset($SavedArray[4])) {
+                fwrite(STDERR, "Error: Instruction $Temp has too many arguments!\n");
+                exit(23);
+            }
+            break;
             /*---END OF INSTRUCTION---*/
 
             case 'PUSHS':
