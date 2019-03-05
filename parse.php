@@ -5,45 +5,7 @@
  * VUT Login: xvanic09
  * Date: 2019-02-18
  * Important: This program is an edited copy of code which I've written a year ago for a project "IPPcode18"
- */
-
-$keywords = [
-    'MOVE',
-    'CREATEFRAME',
-    'PUSHFRAME',
-    'POPFRAME',
-    'DEFVAR',
-    'CALL',
-    'RETURN',
-    'PUSHS',
-    'POPS',
-    'ADD',
-    'SUB',
-    'MUL',
-    'IDIV',
-    'LT',
-    'GT',
-    'EQ',
-    'AND',
-    'OR',
-    'NOT',
-    'INT2CHAR',
-    'STRI2INT',
-    'READ',
-    'WRITE',
-    'CONCAT',
-    'STRLEN',
-    'GETCHAR',
-    'SETCHAR',
-    'TYPE',
-    'LABEL',
-    'JUMP',
-    'JUMPIFEQ',
-    'JUMPIFNEQ',
-    'EXIT',
-    'DPRINT',
-    'BREAK'
-];
+ **/
 
 /*Regexy*/
 //symb - var,int, c_bool, bool, string, nil
@@ -72,7 +34,7 @@ if ($argc > 2) {
 }
 
 /*Načítanie vstupného súboru*/
-$InputControl = @fopen('php://stdin', "r");
+$InputControl = @fopen('php://stdin', "r"); //Will give false when failed opening file or file not found
 if (!$InputControl) {
     fwrite(STDERR, "Error: Reading input file failed!\n");
     exit(11);
@@ -81,14 +43,14 @@ if (!$InputControl) {
 $fileNotEmpty = false;
 $head = false;
 $instrCounter = 0;
-while ($line = fgets($InputControl)) {
-    $IsKeyword = false;
+
+while ($line = fgets($InputControl)) { //Do $line sa postupne každou iteráciou ukladá riadok po riadku
     $fileNotEmpty = true;
 
     $pos = strpos($line, '#'); //ulozime poziciu # na danom riadku do $pos
     if ($line[0] == '#') { //ak sa # nachadza na 0 pozicii tak sa jedna o jednoriadkovy komentar, cely riadok teda nahradime prazdnym znakom
         $line = " ";
-    } //TODO: Zmena v elsif!!!  predsa ak sa nenájde, do pos sa uloží false
+    } //Zmena v elsif!!!  predsa ak sa nenájde, do pos sa uloží false
     elseif (($line[0] != '#') && ($pos != false)) {
         $line = stristr($line, '#', true);
     }
@@ -115,18 +77,7 @@ while ($line = fgets($InputControl)) {
 
         $Temp = $SavedArray[0];//Len uloženie do pomocnej premennej kvoli vypisu chyby
 
-        //Kontrola či prvý string/slovo na riadku je inštrukcia z poľa $keywords
-        $SavedArray[0] = strtoupper($SavedArray[0]); //zo zadania NEpodstatná zmena na uppercase aby bolo ľahšie porovnanie stringu
-        foreach ($keywords as $keyword) {
-            if (strcmp($SavedArray[0], $keyword) == 0) {
-                $IsKeyword = true;
-            }
-        }
-
-        if (!$IsKeyword) {
-            fwrite(STDERR, "Error: $Temp is not an instruction!\n");
-            exit(22);
-        }
+        $SavedArray[0] = strtoupper($SavedArray[0]);
 
         switch ($SavedArray[0]) {
             case 'MOVE': //<var> <symb>
@@ -435,9 +386,7 @@ while ($line = fgets($InputControl)) {
                 if (!preg_match($label, $SavedArray[1])) { //je to ďalšie to čo to má byť ?
                     fwrite(STDERR, "Error: $SavedArray[1] is not a valid operand of instruction: $Temp !\n");
                     exit(23);
-                }
-
-                else{
+                } else {
                     $Arg1Elem = $dom->createElement('arg1', htmlspecialchars($SavedArray[1]));
                     $Arg1Elem->SetAttribute('type', 'label');
                     $instrElem->appendChild($Arg1Elem);
@@ -471,9 +420,7 @@ while ($line = fgets($InputControl)) {
                 if (!preg_match($label, $SavedArray[1])) { //je to ďalšie to čo to má byť ?
                     fwrite(STDERR, "Error: $SavedArray[1] is not a valid operand of instruction: $Temp !\n");
                     exit(23);
-                }
-
-                else{
+                } else {
                     $Arg1Elem = $dom->createElement('arg1', htmlspecialchars($SavedArray[1]));
                     $Arg1Elem->SetAttribute('type', 'label');
                     $instrElem->appendChild($Arg1Elem);
@@ -582,26 +529,23 @@ while ($line = fgets($InputControl)) {
 
                 /*---NEXT ARGUMENT---*/
 
-                if(!isset($SavedArray[2])) {
+                if (!isset($SavedArray[2])) {
                     fwrite(STDERR, "Error: Type is missing!\n");
                     exit(21);
                 }
                 if (!($SavedArray[2] == 'int' || $SavedArray[2] == 'bool' || $SavedArray[2] == 'string')) {
                     fwrite(STDERR, "Error: $SavedArray[2] is not a valid operand of instruction: $Temp !\n");
                     exit(21);
-                }
-                else{
+                } else {
 
 
                     $Arg2Elem = $dom->createElement('arg2', htmlspecialchars($SavedArray[2]));
 
                     if ($SavedArray[2] == 'int') {
                         $Arg2Elem->SetAttribute('type', 'type');
-                    }
-                    elseif ($SavedArray[2] == 'bool') {
+                    } elseif ($SavedArray[2] == 'bool') {
                         $Arg2Elem->SetAttribute('type', 'type');
-                    }
-                    elseif ($SavedArray[2] == 'string') {
+                    } elseif ($SavedArray[2] == 'string') {
                         $Arg2Elem->SetAttribute('type', 'type');
                     }
                     $instrElem->appendChild($Arg2Elem);
@@ -610,7 +554,7 @@ while ($line = fgets($InputControl)) {
 
                 /*---MAX ARGUMENTS REACHED---*/
 
-                if(isset($SavedArray[3])) {
+                if (isset($SavedArray[3])) {
                     fwrite(STDERR, "Error: Instruction $Temp has too many arguments!\n");
                     exit(23);
                 }
@@ -619,7 +563,7 @@ while ($line = fgets($InputControl)) {
             /*---END OF INSTRUCTION---*/
 
             default:
-                fwrite(STDERR, "UNKNOWN OR UNDEFINED INSTRUCTION!\n");
+                fwrite(STDERR, "Error: $Temp is not an instruction!\n");
                 exit(22);
                 break;
         }
@@ -635,5 +579,4 @@ $dom->appendChild($progElem);
 $dom->formatOutput = true;
 $xmlString = $dom->saveXML();
 echo $xmlString;
-//už vážne vygenerujeme reálne xml
 exit(0);
