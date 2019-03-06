@@ -10,7 +10,7 @@
 /*Regexy*/
 //symb - var,int, c_bool, bool, string, nil
 //type - int, c_bool, bool, string
-$var = "/^(?:GF|LF|TF)@[\p{L}|\p{N}\-\_\*\!\?\$%&][\w\-\*\_\!\?\$%&]*$/u";
+$var = "/^(?:GF|LF|TF)@[\p{L}|\-\_\*\!\?\$%&][\w\-\*\_\!\?\$%&]*$/u";
 $int = "/^int@[+-]?\d+$/";
 $bool = "/^bool@(?:true|false)$/";
 $string = '/^string@([^\\\\]*(\\\\\p{N}{3}(?!\p{N}))*)*$/u';
@@ -213,7 +213,7 @@ while ($line = fgets($InputControl)) { //Do $line sa postupne každou iteráciou
             case 'OR':
             case 'STRI2INT':
             case 'CONCAT':
-            case 'GETCHAT':
+            case 'GETCHAR':
             case 'SETCHAR':
                 $instrCounter += 1;
                 $instrElem = $dom->createElement('instruction');
@@ -530,11 +530,11 @@ while ($line = fgets($InputControl)) { //Do $line sa postupne každou iteráciou
 
                 if (!isset($SavedArray[2])) {
                     fwrite(STDERR, "Error: Type is missing!\n");
-                    exit(21);
+                    exit(23);
                 }
                 if (!($SavedArray[2] == 'int' || $SavedArray[2] == 'bool' || $SavedArray[2] == 'string')) {
                     fwrite(STDERR, "Error: $SavedArray[2] is not a valid operand of instruction: $Temp !\n");
-                    exit(21);
+                    exit(23);
                 } else {
 
 
