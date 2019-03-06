@@ -10,12 +10,11 @@
 /*Regexy*/
 //symb - var,int, c_bool, bool, string, nil
 //type - int, c_bool, bool, string
-$var = "/^(?:GF|LF|TF)@[A-Za-z\-\_\*\$%&][\w\-\*\_\$%&]*$/";
+$var = "/^(?:GF|LF|TF)@[\p{L}|\p{N}\-\_\*\!\?\$%&][\w\-\*\_\!\?\$%&]*$/u";
 $int = "/^int@[+-]?\d+$/";
-$c_bool = "/^bool@$/";
 $bool = "/^bool@(?:true|false)$/";
-$string = '/(string@)([[:alnum:]]*[\&\%\_\-\*\+\^\<\>\$]*(\\[0-9]{3})*)*/u';
-$label = "/^[A-Za-z\-\_\*\$%&][\w\-\_\*\$%&]*$/";
+$string = '/^string@([^\\\\]*(\\\\\p{N}{3}(?!\p{N}))*)*$/u';
+$label = "/^[\p{L}|\p{N}\-\_\*\$%&!?][\w\-\_\*\$%&!?]*$/";
 $nil = "/^nil@nil$/";
 
 /*Kontrola vstupných argumentov*/
@@ -113,7 +112,7 @@ while ($line = fgets($InputControl)) { //Do $line sa postupne každou iteráciou
                     fwrite(STDERR, "Error: Symbol is missing!\n");
                     exit(23);
                 }
-                if (!((preg_match($var, $SavedArray[2])) || (preg_match($int, $SavedArray[2])) || (preg_match($c_bool, $SavedArray[2])) || (preg_match($bool, $SavedArray[2])) || (preg_match($string, $SavedArray[2]) || (preg_match($nil, $SavedArray[2]))))) {
+                if (!((preg_match($var, $SavedArray[2])) || (preg_match($int, $SavedArray[2])) || (preg_match($bool, $SavedArray[2])) || (preg_match($string, $SavedArray[2]) || (preg_match($nil, $SavedArray[2]))))) {
                     fwrite(STDERR, "Error: $SavedArray[2] is not a valid operand of instruction: $Temp !\n");
                     exit(23);
                 } else {
@@ -244,7 +243,7 @@ while ($line = fgets($InputControl)) { //Do $line sa postupne každou iteráciou
                     fwrite(STDERR, "Error: First symbol is missing!\n");
                     exit(23);
                 }
-                if (!((preg_match($var, $SavedArray[2])) || (preg_match($int, $SavedArray[2])) || (preg_match($c_bool, $SavedArray[2])) || (preg_match($bool, $SavedArray[2])) || (preg_match($string, $SavedArray[2]) || (preg_match($nil, $SavedArray[2]))))) {
+                if (!((preg_match($var, $SavedArray[2])) || (preg_match($int, $SavedArray[2])) || (preg_match($bool, $SavedArray[2])) || (preg_match($string, $SavedArray[2]) || (preg_match($nil, $SavedArray[2]))))) {
                     fwrite(STDERR, "Error: $SavedArray[2] is not a valid operand of instruction: $Temp !\n");
                     exit(23);
                 } else {
@@ -278,7 +277,7 @@ while ($line = fgets($InputControl)) { //Do $line sa postupne každou iteráciou
                     fwrite(STDERR, "Error: Second symbol is missing!\n");
                     exit(23);
                 }
-                if (!((preg_match($var, $SavedArray[3])) || (preg_match($int, $SavedArray[3])) || (preg_match($c_bool, $SavedArray[3])) || (preg_match($bool, $SavedArray[3])) || (preg_match($string, $SavedArray[3]) || (preg_match($nil, $SavedArray[3]))))) {
+                if (!((preg_match($var, $SavedArray[3])) || (preg_match($int, $SavedArray[3])) || (preg_match($bool, $SavedArray[3])) || (preg_match($string, $SavedArray[3]) || (preg_match($nil, $SavedArray[3]))))) {
                     fwrite(STDERR, "Error: $SavedArray[3] is not a valid operand of instruction: $Temp !\n");
                     exit(23);
                 } else {
@@ -331,7 +330,7 @@ while ($line = fgets($InputControl)) { //Do $line sa postupne každou iteráciou
                     fwrite(STDERR, "Error: Symbol is missing!\n");
                     exit(23);
                 }
-                if (!((preg_match($var, $SavedArray[1])) || (preg_match($int, $SavedArray[1])) || (preg_match($c_bool, $SavedArray[1])) || (preg_match($bool, $SavedArray[1])) || (preg_match($string, $SavedArray[1]) || (preg_match($nil, $SavedArray[1]))))) {
+                if (!((preg_match($var, $SavedArray[1])) || (preg_match($int, $SavedArray[1])) || (preg_match($bool, $SavedArray[1])) || (preg_match($string, $SavedArray[1]) || (preg_match($nil, $SavedArray[1]))))) {
                     fwrite(STDERR, "Error: $SavedArray[1] is not a valid operand of instruction: $Temp !\n");
                     exit(23);
                 } else {
@@ -433,7 +432,7 @@ while ($line = fgets($InputControl)) { //Do $line sa postupne každou iteráciou
                     fwrite(STDERR, "Error: First symbol is missing!\n");
                     exit(23);
                 }
-                if (!((preg_match($var, $SavedArray[2])) || (preg_match($int, $SavedArray[2])) || (preg_match($c_bool, $SavedArray[2])) || (preg_match($bool, $SavedArray[2])) || (preg_match($string, $SavedArray[2]) || (preg_match($nil, $SavedArray[2]))))) {
+                if (!((preg_match($var, $SavedArray[2])) || (preg_match($int, $SavedArray[2])) || (preg_match($bool, $SavedArray[2])) || (preg_match($string, $SavedArray[2]) || (preg_match($nil, $SavedArray[2]))))) {
                     fwrite(STDERR, "Error: $SavedArray[2] is not a valid operand of instruction: $Temp !\n");
                     exit(23);
                 } else {
@@ -467,7 +466,7 @@ while ($line = fgets($InputControl)) { //Do $line sa postupne každou iteráciou
                     fwrite(STDERR, "Error: Second symbol is missing!\n");
                     exit(23);
                 }
-                if (!((preg_match($var, $SavedArray[3])) || (preg_match($int, $SavedArray[3])) || (preg_match($c_bool, $SavedArray[3])) || (preg_match($bool, $SavedArray[3])) || (preg_match($string, $SavedArray[3]) || (preg_match($nil, $SavedArray[3]))))) {
+                if (!((preg_match($var, $SavedArray[3])) || (preg_match($int, $SavedArray[3])) || (preg_match($bool, $SavedArray[3])) || (preg_match($string, $SavedArray[3]) || (preg_match($nil, $SavedArray[3]))))) {
                     fwrite(STDERR, "Error: $SavedArray[3] is not a valid operand of instruction: $Temp !\n");
                     exit(23);
                 } else {
@@ -549,7 +548,6 @@ while ($line = fgets($InputControl)) { //Do $line sa postupne každou iteráciou
                         $Arg2Elem->SetAttribute('type', 'type');
                     }
                     $instrElem->appendChild($Arg2Elem);
-                    //TODO: Prečo nie aj c_bool jako prázdny bool ?
                 }
 
                 /*---MAX ARGUMENTS REACHED---*/
