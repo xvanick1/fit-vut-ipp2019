@@ -14,7 +14,7 @@ $var = "/^(?:GF|LF|TF)@[\p{L}|\-\_\*\!\?\$%&][\w\-\*\_\!\?\$%&]*$/u";
 $int = "/^int@[+-]?\d+$/";
 $bool = "/^bool@(?:true|false)$/";
 $string = '/^string@([^\\\\]*(\\\\\p{N}{3}(?!\p{N}))*)*$/u';
-$label = "/^[\p{L}|\p{N}\-\_\*\$%&!?][\w\-\_\*\$%&!?]*$/";
+$label = "/^[\p{L}|\-\_\*\$%&!?][\w\-\_\*\$%&!?]*$/";
 $nil = "/^nil@nil$/";
 
 /*Kontrola vstupných argumentov*/
