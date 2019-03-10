@@ -247,7 +247,7 @@ while ($line = fgets($InputControl)) {
                 }
 
                 /*Identifikácia operandu*/
-                if (!preg_match($var, $SavedArray[1])) { //je to ďalšie to čo to má byť ?
+                if (!preg_match($var, $SavedArray[1])) {
                     fwrite(STDERR, "Error: $SavedArray[1] is not a valid operand of instruction: $Temp !\n");
                     exit(23);
                 } else {
