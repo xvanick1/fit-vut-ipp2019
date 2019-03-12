@@ -132,3 +132,5 @@ fabric.properties
 .history
 
 # End of https://www.gitignore.io/api/osx,macos,phpstorm,visualstudiocode
+
+\.idea/
