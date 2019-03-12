@@ -82,7 +82,7 @@ while ($line = fgets($InputControl)) {
 
         $Temp = $SavedArray[0]; //Pomocná premenná k výpisu chyby
 
-        /*Identifikácia funkcie jazyka IPPcode19*/
+        /*Identifikácia inštrukcie jazyka IPPcode19*/
         $SavedArray[0] = strtoupper($SavedArray[0]);
         switch ($SavedArray[0]) {
             case 'MOVE':
@@ -92,13 +92,13 @@ while ($line = fgets($InputControl)) {
             case 'NOT':
                 $instrCounter += 1;
 
-                /*Generovanie XML, funkcie*/
+                /*Generovanie XML, inštrukcie*/
                 $instrElem = $dom->createElement('instruction');
                 $instrElem->setAttribute('order', $instrCounter);
                 $instrElem->setAttribute('opcode', $SavedArray[0]);
                 $progElem->appendChild($instrElem);
 
-                /*---Prvý operand funkcie---*/
+                /*---Prvý operand inštrukcie---*/
 
                 if (!isset($SavedArray[1])) {
                     fwrite(STDERR, "Error: Variable is missing!\n");
@@ -110,13 +110,13 @@ while ($line = fgets($InputControl)) {
                     fwrite(STDERR, "Error: $SavedArray[1] is not a valid operand of instruction: $Temp !\n");
                     exit(23);
                 } else {
-                    /*Generovanie XML operandu funkcie*/
+                    /*Generovanie XML operandu inštrukcie*/
                     $arg1Elem = $dom->createElement('arg1', htmlspecialchars($SavedArray[1]));
                     $arg1Elem->SetAttribute('type', 'var');
                     $instrElem->appendChild($arg1Elem);
                 }
 
-                /*---Druhý operand funkcie---*/
+                /*---Druhý operand inštrukcie---*/
 
                 if (!isset($SavedArray[2])) {
                     fwrite(STDERR, "Error: Symbol is missing!\n");
@@ -131,7 +131,7 @@ while ($line = fgets($InputControl)) {
                     $ArgType = strstr($SavedArray[2], '@', true);
                     $ArgLeng = strlen($ArgType) + 1;
 
-                    /*Generovanie XML operandu funkcie*/
+                    /*Generovanie XML operandu inštrukcie*/
                     if (!($ArgType == 'GF' || $ArgType == 'LF' || $ArgType == 'TF')) {
                         $Arg2Elem = $dom->createElement('arg2', htmlspecialchars(substr($SavedArray[2], $ArgLeng, strlen(htmlspecialchars($SavedArray[2])))));
                     } else {
@@ -152,14 +152,14 @@ while ($line = fgets($InputControl)) {
                     $instrElem->appendChild($Arg2Elem);
                 }
 
-                /*---Dosiahnutý maximálny počet operandov funkcie---*/
+                /*---Dosiahnutý maximálny počet operandov inštrukcie---*/
                 if (isset($SavedArray[3])) {
                     fwrite(STDERR, "Error: Instruction $Temp has too many arguments!\n");
                     exit(23);
                 }
                 break;
 
-            /*---Koniec funkcie---*/
+            /*---Koniec inštrukcie---*/
 
             case 'CREATEFRAME':
             case 'PUSHFRAME':
@@ -168,31 +168,31 @@ while ($line = fgets($InputControl)) {
             case 'BREAK':
                 $instrCounter += 1;
 
-                /*Generovanie XML, funkcie*/
+                /*Generovanie XML, inštrukcie*/
                 $instrElem = $dom->createElement('instruction');
                 $instrElem->setAttribute('order', $instrCounter);
                 $instrElem->setAttribute('opcode', $SavedArray[0]);
                 $progElem->appendChild($instrElem);
 
-                /*---Dosiahnutý maximálny počet operandov funkcie---*/
+                /*---Dosiahnutý maximálny počet operandov inštrukcie---*/
                 if (isset($SavedArray[1])) {
                     fwrite(STDERR, "Error: Instruction $Temp has too many arguments!\n");
                     exit(23);
                 }
                 break;
-            /*---Koniec funkcie---*/
+            /*---Koniec inštrukcie---*/
 
             case 'DEFVAR': //<var>
             case 'POPS':
                 $instrCounter += 1;
 
-                /*Generovanie XML, funkcie*/
+                /*Generovanie XML, inštrukcie*/
                 $instrElem = $dom->createElement('instruction');
                 $instrElem->setAttribute('order', $instrCounter);
                 $instrElem->setAttribute('opcode', $SavedArray[0]);
                 $progElem->appendChild($instrElem);
 
-                /*---Prvý operand funkcie---*/
+                /*---Prvý operand inštrukcie---*/
 
                 if (!isset($SavedArray[1])) {
                     fwrite(STDERR, "Error: Variable is missing!\n");
@@ -204,19 +204,19 @@ while ($line = fgets($InputControl)) {
                     fwrite(STDERR, "Error: $SavedArray[1] is not a valid operand of instruction: $Temp !\n");
                     exit(23);
                 } else {
-                    /*Generovanie XML operandu funkcie*/
+                    /*Generovanie XML operandu inštrukcie*/
                     $arg1Elem = $dom->createElement('arg1', htmlspecialchars($SavedArray[1]));
                     $arg1Elem->SetAttribute('type', 'var');
                     $instrElem->appendChild($arg1Elem);
                 }
 
-                /*---Dosiahnutý maximálny počet operandov funkcie---*/
+                /*---Dosiahnutý maximálny počet operandov inštrukcie---*/
                 if (isset($SavedArray[2])) {
                     fwrite(STDERR, "Error: Instruction $Temp has too many arguments!\n");
                     exit(23);
                 }
                 break;
-            /*---Koniec funkcie---*/
+            /*---Koniec inštrukcie---*/
 
             case 'ADD':
             case 'SUB':
@@ -233,13 +233,13 @@ while ($line = fgets($InputControl)) {
             case 'SETCHAR':
                 $instrCounter += 1;
 
-                /*Generovanie XML, funkcie*/
+                /*Generovanie XML, inštrukcie*/
                 $instrElem = $dom->createElement('instruction');
                 $instrElem->setAttribute('order', $instrCounter);
                 $instrElem->setAttribute('opcode', $SavedArray[0]);
                 $progElem->appendChild($instrElem);
 
-                /*---Prvý operand funkcie---*/
+                /*---Prvý operand inštrukcie---*/
 
                 if (!isset($SavedArray[1])) {
                     fwrite(STDERR, "Error: Variable is missing!\n");
@@ -251,13 +251,13 @@ while ($line = fgets($InputControl)) {
                     fwrite(STDERR, "Error: $SavedArray[1] is not a valid operand of instruction: $Temp !\n");
                     exit(23);
                 } else {
-                    /*Generovanie XML operandu funkcie*/
+                    /*Generovanie XML operandu inštrukcie*/
                     $arg1Elem = $dom->createElement('arg1', htmlspecialchars($SavedArray[1]));
                     $arg1Elem->SetAttribute('type', 'var');
                     $instrElem->appendChild($arg1Elem);
                 }
 
-                /*---Druhý operand funkcie---*/
+                /*---Druhý operand inštrukcie---*/
 
                 if (!isset($SavedArray[2])) {
                     fwrite(STDERR, "Error: First symbol is missing!\n");
@@ -272,7 +272,7 @@ while ($line = fgets($InputControl)) {
                     $ArgType = strstr($SavedArray[2], '@', true);
                     $ArgLeng = strlen($ArgType) + 1;
 
-                    /*Generovanie XML operandu funkcie*/
+                    /*Generovanie XML operandu inštrukcie*/
                     if (!($ArgType == 'GF' || $ArgType == 'LF' || $ArgType == 'TF')) {
                         $Arg2Elem = $dom->createElement('arg2', htmlspecialchars(substr($SavedArray[2], $ArgLeng, strlen(htmlspecialchars($SavedArray[2])))));
                     } else {
@@ -293,7 +293,7 @@ while ($line = fgets($InputControl)) {
                     $instrElem->appendChild($Arg2Elem);
                 }
 
-                /*---Tretí operand funkcie---*/
+                /*---Tretí operand inštrukcie---*/
 
                 if (!isset($SavedArray[3])) {
                     fwrite(STDERR, "Error: Second symbol is missing!\n");
@@ -308,7 +308,7 @@ while ($line = fgets($InputControl)) {
                     $ArgType = strstr($SavedArray[3], '@', true);
                     $ArgLeng = strlen($ArgType) + 1;
 
-                    /*Generovanie XML operandu funkcie*/
+                    /*Generovanie XML operandu inštrukcie*/
                     if (!($ArgType == 'GF' || $ArgType == 'LF' || $ArgType == 'TF')) {
                         $Arg3Elem = $dom->createElement('arg3', htmlspecialchars(substr($SavedArray[3], $ArgLeng, strlen(htmlspecialchars($SavedArray[3])))));
                     } else {
@@ -329,13 +329,13 @@ while ($line = fgets($InputControl)) {
                     $instrElem->appendChild($Arg3Elem);
                 }
 
-                /*---Dosiahnutý maximálny počet operandov funkcie---*/
+                /*---Dosiahnutý maximálny počet operandov inštrukcie---*/
                 if (isset($SavedArray[4])) {
                     fwrite(STDERR, "Error: Instruction $Temp has too many arguments!\n");
                     exit(23);
                 }
                 break;
-            /*---Koniec funkcie---*/
+            /*---Koniec inštrukcie---*/
 
             case 'PUSHS':
             case 'WRITE':
@@ -343,13 +343,13 @@ while ($line = fgets($InputControl)) {
             case 'DPRINT':
                 $instrCounter += 1;
 
-                /*Generovanie XML, funkcie*/
+                /*Generovanie XML, inštrukcie*/
                 $instrElem = $dom->createElement('instruction');
                 $instrElem->setAttribute('order', $instrCounter);
                 $instrElem->setAttribute('opcode', $SavedArray[0]);
                 $progElem->appendChild($instrElem);
 
-                /*---Prvý operand funkcie---*/
+                /*---Prvý operand inštrukcie---*/
 
                 if (!isset($SavedArray[1])) {
                     fwrite(STDERR, "Error: Symbol is missing!\n");
@@ -364,7 +364,7 @@ while ($line = fgets($InputControl)) {
                     $ArgType = strstr($SavedArray[1], '@', true);
                     $ArgLeng = strlen($ArgType) + 1;
 
-                    /*Generovanie XML operandu funkcie*/
+                    /*Generovanie XML operandu inštrukcie*/
                     if (!($ArgType == 'GF' || $ArgType == 'LF' || $ArgType == 'TF')) {
                         $Arg1Elem = $dom->createElement('arg1', htmlspecialchars(substr($SavedArray[1], $ArgLeng, strlen(htmlspecialchars($SavedArray[1])))));
                     } else {
@@ -385,26 +385,26 @@ while ($line = fgets($InputControl)) {
                     $instrElem->appendChild($Arg1Elem);
                 }
 
-                /*---Dosiahnutý maximálny počet operandov funkcie---*/
+                /*---Dosiahnutý maximálny počet operandov inštrukcie---*/
                 if (isset($SavedArray[2])) {
                     fwrite(STDERR, "Error: Instruction $Temp has too many arguments!\n");
                     exit(23);
                 }
                 break;
-            /*---Koniec funkcie---*/
+            /*---Koniec inštrukcie---*/
 
             case 'LABEL':
             case 'JUMP':
             case 'CALL':
                 $instrCounter += 1;
 
-                /*Generovanie XML, funkcie*/
+                /*Generovanie XML, inštrukcie*/
                 $instrElem = $dom->createElement('instruction');
                 $instrElem->setAttribute('order', $instrCounter);
                 $instrElem->setAttribute('opcode', $SavedArray[0]);
                 $progElem->appendChild($instrElem);
 
-                /*---Prvý operand funkcie---*/
+                /*---Prvý operand inštrukcie---*/
 
                 if (!isset($SavedArray[1])) {
                     fwrite(STDERR, "Error: Label is missing!\n");
@@ -416,31 +416,31 @@ while ($line = fgets($InputControl)) {
                     fwrite(STDERR, "Error: $SavedArray[1] is not a valid operand of instruction: $Temp !\n");
                     exit(23);
                 } else {
-                    /*Generovanie XML operandu funkcie*/
+                    /*Generovanie XML operandu inštrukcie*/
                     $Arg1Elem = $dom->createElement('arg1', htmlspecialchars($SavedArray[1]));
                     $Arg1Elem->SetAttribute('type', 'label');
                     $instrElem->appendChild($Arg1Elem);
                 }
 
-                /*---Dosiahnutý maximálny počet operandov funkcie---*/
+                /*---Dosiahnutý maximálny počet operandov inštrukcie---*/
                 if (isset($SavedArray[2])) {
                     fwrite(STDERR, "Error: Instruction $Temp has too many arguments!\n");
                     exit(23);
                 }
                 break;
-            /*---Koniec funkcie---*/
+            /*---Koniec inštrukcie---*/
 
             case 'JUMPIFEQ':
             case 'JUMPIFNEQ':
                 $instrCounter += 1;
 
-                /*Generovanie XML, funkcie*/
+                /*Generovanie XML, inštrukcie*/
                 $instrElem = $dom->createElement('instruction');
                 $instrElem->setAttribute('order', $instrCounter);
                 $instrElem->setAttribute('opcode', $SavedArray[0]);
                 $progElem->appendChild($instrElem);
 
-                /*---Prvý operand funkcie---*/
+                /*---Prvý operand inštrukcie---*/
 
                 if (!isset($SavedArray[1])) {
                     fwrite(STDERR, "Error: Label is missing!\n");
@@ -452,14 +452,14 @@ while ($line = fgets($InputControl)) {
                     fwrite(STDERR, "Error: $SavedArray[1] is not a valid operand of instruction: $Temp !\n");
                     exit(23);
                 } else {
-                    /*Generovanie XML operandu funkcie*/
+                    /*Generovanie XML operandu inštrukcie*/
                     $Arg1Elem = $dom->createElement('arg1', htmlspecialchars($SavedArray[1]));
                     $Arg1Elem->SetAttribute('type', 'label');
                     $instrElem->appendChild($Arg1Elem);
                     //ak áno tak generujeme (pomocou SaveArray1) ďalej do xml arg1 do instruction
                 }
 
-                /*---Druhý operand funkcie---*/
+                /*---Druhý operand inštrukcie---*/
 
                 if (!isset($SavedArray[2])) {
                     fwrite(STDERR, "Error: First symbol is missing!\n");
@@ -474,7 +474,7 @@ while ($line = fgets($InputControl)) {
                     $ArgType = strstr($SavedArray[2], '@', true);
                     $ArgLeng = strlen($ArgType) + 1;
 
-                    /*Generovanie XML operandu funkcie*/
+                    /*Generovanie XML operandu inštrukcie*/
                     if (!($ArgType == 'GF' || $ArgType == 'LF' || $ArgType == 'TF')) {
                         $Arg2Elem = $dom->createElement('arg2', htmlspecialchars(substr($SavedArray[2], $ArgLeng, strlen(htmlspecialchars($SavedArray[2])))));
                     } else {
@@ -495,7 +495,7 @@ while ($line = fgets($InputControl)) {
                     $instrElem->appendChild($Arg2Elem);
                 }
 
-                /*---Tretí operand funkcie---*/
+                /*---Tretí operand inštrukcie---*/
 
                 if (!isset($SavedArray[3])) {
                     fwrite(STDERR, "Error: Second symbol is missing!\n");
@@ -510,7 +510,7 @@ while ($line = fgets($InputControl)) {
                     $ArgType = strstr($SavedArray[3], '@', true);
                     $ArgLeng = strlen($ArgType) + 1;
 
-                    /*Generovanie XML operandu funkcie*/
+                    /*Generovanie XML operandu inštrukcie*/
                     if (!($ArgType == 'GF' || $ArgType == 'LF' || $ArgType == 'TF')) {
                         $Arg3Elem = $dom->createElement('arg3', htmlspecialchars(substr($SavedArray[3], $ArgLeng, strlen(htmlspecialchars($SavedArray[3])))));
                     } else {
@@ -531,24 +531,24 @@ while ($line = fgets($InputControl)) {
                     $instrElem->appendChild($Arg3Elem);
                 }
 
-                /*---Dosiahnutý maximálny počet operandov funkcie---*/
+                /*---Dosiahnutý maximálny počet operandov inštrukcie---*/
                 if (isset($SavedArray[4])) {
                     fwrite(STDERR, "Error: Instruction $Temp has too many arguments!\n");
                     exit(23);
                 }
                 break;
-            /*---Koniec funkcie---*/
+            /*---Koniec inštrukcie---*/
 
             case 'READ':
                 $instrCounter += 1;
 
-                /*Generovanie XML, funkcie*/
+                /*Generovanie XML, inštrukcie*/
                 $instrElem = $dom->createElement('instruction');
                 $instrElem->setAttribute('order', $instrCounter);
                 $instrElem->setAttribute('opcode', $SavedArray[0]);
                 $progElem->appendChild($instrElem);
 
-                /*---Prvý operand funkcie---*/
+                /*---Prvý operand inštrukcie---*/
 
                 if (!isset($SavedArray[1])) {
                     fwrite(STDERR, "Error: Variable is missing!\n");
@@ -560,13 +560,13 @@ while ($line = fgets($InputControl)) {
                     fwrite(STDERR, "Error: $SavedArray[1] is not a valid operand of instruction: $Temp !\n");
                     exit(23);
                 } else {
-                    /*Generovanie XML operandu funkcie*/
+                    /*Generovanie XML operandu inštrukcie*/
                     $arg1Elem = $dom->createElement('arg1', htmlspecialchars($SavedArray[1]));
                     $arg1Elem->SetAttribute('type', 'var');
                     $instrElem->appendChild($arg1Elem);
                 }
 
-                /*---Druhý operand funkcie---*/
+                /*---Druhý operand inštrukcie---*/
 
                 if (!isset($SavedArray[2])) {
                     fwrite(STDERR, "Error: Type is missing!\n");
@@ -579,7 +579,7 @@ while ($line = fgets($InputControl)) {
                     exit(23);
                 } else {
 
-                    /*Generovanie XML operandu funkcie*/
+                    /*Generovanie XML operandu inštrukcie*/
                     $Arg2Elem = $dom->createElement('arg2', htmlspecialchars($SavedArray[2]));
 
                     if ($SavedArray[2] == 'int') {
@@ -592,13 +592,13 @@ while ($line = fgets($InputControl)) {
                     $instrElem->appendChild($Arg2Elem);
                 }
 
-                /*---Dosiahnutý maximálny počet operandov funkcie---*/
+                /*---Dosiahnutý maximálny počet operandov inštrukcie---*/
                 if (isset($SavedArray[3])) {
                     fwrite(STDERR, "Error: Instruction $Temp has too many arguments!\n");
                     exit(23);
                 }
                 break;
-            /*---Koniec funkcie---*/
+            /*---Koniec inštrukcie---*/
 
             /*Zadaná neznáma inštrukcia*/
             default:
