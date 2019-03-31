@@ -23,7 +23,8 @@ if ($argc > 5) { //Kontrola počtu vstupných argumentov
     echo "--help\n";
     echo "This is help message :)\n"; // TODO napsat text pro help!!!!!!!!!!
     exit(0);
-} else { //Identifikácia ďalších argumentov na vstupe
+} else {
+    //Identifikácia ďalších argumentov na vstupe
     if (array_key_exists("recursive", $argument)) {
         $rec_flag = true;
     }
@@ -193,7 +194,7 @@ foreach ($src as $run_test) {
         }
         $xml_ref_input_file = substr($run_test, 0, -3) . "out";
         if ($parse_only_flag == true && $return_parser == 0) {
-            exec("java -jar /pub/courses/ipp/jexamxml ".stream_get_meta_data($tmp_parser)["uri"]." $xml_ref_input_file ./options > /dev/null 2>/dev/null", $output_parser, $return_parser);
+            exec("java -jar /pub/courses/ipp/jexamxml " . stream_get_meta_data($tmp_parser)["uri"] . " $xml_ref_input_file ./options > /dev/null 2>/dev/null", $output_parser, $return_parser);
             if ($return_parser == 0) {
                 echo "<p><font color=\"green\"><b>SUCC</b></font> Parse test <i>$run_test_path</i> ended with return code:<font color=\"green\"><b> 0 </b></font></p>";
                 $test_succ_cnt++;
