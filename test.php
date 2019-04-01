@@ -23,32 +23,35 @@ $parse_only_flag = false;
 $int_only_flag = false;
 
 /* --- Function called, when argument help is used by user --- */
-function help(){
-    $help = "Script \"test.php\" written in PHP 7.3".PHP_EOL.PHP_EOL;
-    $help .= "Script is automatics testing tool for the apps \"parse.php\" and \"interpret.py\".".PHP_EOL;
-    $help .= "Script loads the files containing tests and runs them to check".PHP_EOL;
-    $help .= "the correctness of both programs. Generates the output written in HTML5 to stdout.".PHP_EOL.PHP_EOL;
-    $help .= "Possible arguments:".PHP_EOL;
-    $help .= "\t--help".PHP_EOL;
-    $help .= "\t--directory=path".PHP_EOL;
-    $help .= "\t--recursive".PHP_EOL;
-    $help .= "\t--parse-script=file".PHP_EOL;
-    $help .= "\t--int-script=file".PHP_EOL;
-    $help .= "\t--parse-only".PHP_EOL;
-    $help .= "\t--int-only".PHP_EOL;
+function help()
+{
+    $help = "Script \"test.php\" written in PHP 7.3" . PHP_EOL . PHP_EOL;
+    $help .= "Script is automatics testing tool for the apps \"parse.php\" and \"interpret.py\"." . PHP_EOL;
+    $help .= "Script loads the files containing tests and runs them to check" . PHP_EOL;
+    $help .= "the correctness of both programs. Generates the output written in HTML5 to stdout." . PHP_EOL . PHP_EOL;
+    $help .= "Possible arguments:" . PHP_EOL;
+    $help .= "\t--help" . PHP_EOL;
+    $help .= "\t--directory=path" . PHP_EOL;
+    $help .= "\t--recursive" . PHP_EOL;
+    $help .= "\t--parse-script=file" . PHP_EOL;
+    $help .= "\t--int-script=file" . PHP_EOL;
+    $help .= "\t--parse-only" . PHP_EOL;
+    $help .= "\t--int-only" . PHP_EOL;
 
-    echo $help.PHP_EOL;
+    echo $help . PHP_EOL;
 }
 
 /* --- Checks existence of directory or file --- */
-function existenceErr($existenceArgument){
-    fprintf(STDERR, "$existenceArgument doesn't exist.\n");
+function existenceErr($existenceArgument)
+{
+    fprintf(STDERR, "Error: $existenceArgument doesn't exist or insufficient permissions to $existenceArgument\n");
     exit(11);
 }
 
 /* --- Checks the path to directory or file --- */
-function pathErr($existenceArgument){
-    fprintf(STDERR, "$existenceArgument path wasn't entered correctly!\n");
+function pathErr($existenceArgument)
+{
+    fprintf(STDERR, "Error: $existenceArgument path wasn't entered correctly!\n");
     exit(10);
 }
 
@@ -68,19 +71,20 @@ function generateHeader()
     $header .= "<h1>Summary of the IPP2019 test result</h1>" . PHP_EOL;
     $header .= "<h2>Individual tests</h2>" . PHP_EOL;
 
-    echo $header.PHP_EOL;
+    echo $header . PHP_EOL;
 }
 
 /* --- Prints summary of all tests to STDOUT --- */
-function generateSummaryOfTests($testsCount, $failTestsCount, $succTestsCount, $procentual){
+function generateSummaryOfTests($testsCount, $failTestsCount, $succTestsCount, $procentual)
+{
 
-    $testsSummary = "<h2>Summary of tests</h2>".PHP_EOL;
-    $testsSummary .= "<p><b>Total number of tests: $testsCount </b></p>".PHP_EOL;
-    $testsSummary .= "<p><font color=\"red\"><b>Total number of unsuccessful tests: $failTestsCount </b></font></p>".PHP_EOL;
-    $testsSummary .= "<p><font color=\"green\"><b>Total number of successful tests: $succTestsCount </b></font></p>".PHP_EOL;
-    $testsSummary .= "<p><b>Percentage of success: $procentual %</b></p></body></html>".PHP_EOL;
+    $testsSummary = "<h2>Summary of tests</h2>" . PHP_EOL;
+    $testsSummary .= "<p><b>Total number of tests: $testsCount </b></p>" . PHP_EOL;
+    $testsSummary .= "<p><font color=\"red\"><b>Total number of unsuccessful tests: $failTestsCount </b></font></p>" . PHP_EOL;
+    $testsSummary .= "<p><font color=\"green\"><b>Total number of successful tests: $succTestsCount </b></font></p>" . PHP_EOL;
+    $testsSummary .= "<p><b>Percentage of success: $procentual %</b></p></body></html>" . PHP_EOL;
 
-    echo $testsSummary.PHP_EOL;
+    echo $testsSummary . PHP_EOL;
 }
 
 
@@ -140,10 +144,10 @@ if ($argc > 5) { //Kontrola počtu vstupných argumentov
         }
     }
     if ($argument == false) { //Zadaný neznámy argument
-        fprintf(STDERR, "Unknown argument used!\n");
+        fprintf(STDERR, "Error: Unknown argument used!\n");
         exit(10);
     } elseif ((array_key_exists("parse-only", $argument) && array_key_exists("int-only", $argument)) || (array_key_exists("parse-only", $argument) && ($in_flag == true)) || (array_key_exists("int-only", $argument) && ($parse_flag == true))) { //Zadaná nepovolená kombinácia argumentov
-        fprintf(STDERR, "Combination of these arguments is not allowed\n");
+        fprintf(STDERR, "Error: Unauthorized combination arguments\n");
         exit(10);
     }
 
@@ -173,22 +177,16 @@ $succTestsCounter = 0;
 $failTestsCounter = 0;
 
 foreach ($src as $run_test) {
-    if (!($TemporaryParser = tmpfile())) {
-        fprintf(STDERR, "Temporary file creation error\n");
-        exit(99);
-    }
-    if (!($TemporaryInterpret = tmpfile())) {
-        fprintf(STDERR, "Temporary file creation error\n");
+    if (!($TemporaryParser = tmpfile()) || !($TemporaryInterpret = tmpfile())) {
+        fprintf(STDERR, "Internal Error: Failed to create temporary file\n");
         exit(99);
     }
 
-    if (!($in = fopen(substr($run_test, 0, -3) . "in", "c+"))) {
-        exit(11);
-    } elseif (!($rc = fopen(substr($run_test, 0, -3) . "rc", "c+"))) {
-        exit(11);
-    } elseif (!($out = fopen(substr($run_test, 0, -3) . "out", "c+"))) {
-        exit(11);
+    $existenceArgument = "File";
+    if (!($in = fopen(substr($run_test, 0, -3) . "in", "c+")) || !($rc = fopen(substr($run_test, 0, -3) . "rc", "c+")) || !($out = fopen(substr($run_test, 0, -3) . "out", "c+"))) {
+        existenceErr($existenceArgument);
     }
+
     if (filesize(substr($run_test, 0, -3) . "rc") == 0) {
         fwrite($rc, "0\n");
         $ret_code = 0;
