@@ -1,4 +1,11 @@
 <?php
+/**
+ * Created by PhpStorm.
+ * Author: Jozef Vanický
+ * VUT Login: xvanic09
+ * Date: 2019-03-30
+ * Author comment: Tento skript je upravenou kópiou kódu, ktorý som napísal pred rokom k projektu z predmetu IPP 2017/2018 k jazyku IPPcode18.
+ **/
 
 $arrayOfArguments = array("recursive", "directory::", "parse-script::", "int-script::", "parse-only", "int-only"); //Array of allowed arguments
 $dir = getcwd();
