@@ -4,7 +4,7 @@
  * Author: Jozef Vanický
  * VUT Login: xvanic09
  * Date: 2019-02-18
- * Author comment: Tento skript je upravenou kópiou kódu, ktorý som napísal pred rokom k projektu z predmetu IPP 2017/2018 k jazyku IPPcode18.
+ * Author's comment: Tento skript je upravenou kópiou kódu, ktorý som napísal pred rokom k projektu z predmetu IPP 2017/2018 k jazyku IPPcode18.
  **/
 
 /*Regulárne výrazy použité pri spracovaní argumentov jednotlivých funkcií*/

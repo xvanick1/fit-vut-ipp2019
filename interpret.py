@@ -1,8 +1,9 @@
-import sys, argparse, re
+import argparse
+import re
 import xml.etree.ElementTree as ET
 
 
-def replaceEscape(match):
+def replaceEscapeSequence(match):
     number = int(match.group(1))
     return chr(number)
 
@@ -17,8 +18,9 @@ class Interpet(object):
         self.boolean = r"^(true|false)$"
         self.label = r"^[A-Za-z\-\_\*\$%&][\w\-\_\*\$%&]*$"
         self.string = r"^((\x5C\d{3})|[^\x23\s\x5C])*$"
-        self.symb = r"var|string|bool|int"
+        self.symb = r"var|string|bool|int|nil"
         self.typ = r"int|string|bool"
+        self.nil = r"nil"
         self.tempframe = None
         self.framearray = []
         self.localframe = None
@@ -34,13 +36,13 @@ class Interpet(object):
 
     def parsearg(self):  # spracovani vstupnich argumentu
         parser = argparse.ArgumentParser()
-        parser.add_argument('--source',
+        parser.add_argument('--source', '--input',
                             help='Skript typu filtr (parse.php v jazyce PHP 5.6) nacte ze standardniho vstupu zdrojovy kod v IPPcode18 (viz sekce 6), zkontroluje lexikalni a syntaktickou spravnost kodu a vypise na standardni vystup XML reprezentaci programu dle specifikace v sekci 3.1.\n',
                             required=True)
         try:
             self.args = parser.parse_args()
         except:
-            exit(10)
+            exit(0)
 
     def xmlread(self):  # nacitani xml souboru
         tree = ET.parse(self.args.source)
@@ -52,7 +54,7 @@ class Interpet(object):
             exit(31)
 
         if self.root.tag != 'program' or self.root.get('language') != 'IPPcode19':  # kontrola spravnosti hlavicky
-            exit(31)
+            exit(32)
 
     def iodercontrol(self):
         elemorder = []
@@ -62,40 +64,42 @@ class Interpet(object):
             elemorder.append(elem.get('order'))
 
     def checksymbol(self, typ, text):  # pomocna funkce pro lexikalni kontrolu symbolu
-        if typ == 'var' and text == None:
+        if typ == 'var' and text is None:
             exit(32)
-        elif typ == 'var' and re.fullmatch(self.var, text) == None:
-            exit(31)
-        elif typ == 'string' and text == None:
+        elif typ == 'var' and re.fullmatch(self.var, text) is None:
+            exit(32)
+        elif typ == 'string' and text is None:
             pass
-        elif typ == 'string' and re.fullmatch(self.string, text) == None:
-            exit(31)
-        elif typ == 'bool' and text == None:
+        elif typ == 'string' and re.fullmatch(self.string, text) is None:
             exit(32)
-        elif typ == 'bool' and re.fullmatch(self.boolean, text) == None:
-            exit(31)
-        elif typ == 'int' and text == None:
+        elif typ == 'bool' and text is None:
             exit(32)
-        elif typ == 'int' and re.fullmatch(self.integer, text) == None:
-            exit(31)
+        elif typ == 'bool' and re.fullmatch(self.boolean, text) is None:
+            exit(32)
+        elif typ == 'int' and text is None:
+            exit(32)
+        elif typ == 'int' and re.fullmatch(self.integer, text) is None:
+            exit(32)
+        elif typ == 'nil' and re.fullmatch(self.nil, text) is None:
+            exit(32)
 
     def checkvar(self, text):  # pomocna funkce pro lexikalni kontrolu variable
-        if text == None:
+        if text is None:
             exit(32)
-        elif re.fullmatch(self.var, text) == None:
-            exit(31)
+        elif re.fullmatch(self.var, text) is None:
+            exit(32)
 
     def checklabel(self, text):  # pomocna funkce pro lexikalni kontrolu label
-        if text == None:
+        if text is None:
             exit(32)
-        elif re.fullmatch(self.label, text) == None:
-            exit(31)
+        elif re.fullmatch(self.label, text) is None:
+            exit(32)
 
     def checktype(self, text):  # pomocna funkce pro lexikalni kontrolu type
-        if text == None:
+        if text is None:
             exit(32)
-        elif re.fullmatch(self.typ, text) == None:
-            exit(31)
+        elif re.fullmatch(self.typ, text) is None:
+            exit(32)
 
     def returnsymboltype(self, typ, text):
         if typ == 'bool':
@@ -110,47 +114,57 @@ class Interpet(object):
                 return ""
             else:
                 regex = re.compile(r"\\(\d{3})")
-                return regex.sub(replaceEscape, text)
+                return regex.sub(replaceEscapeSequence, text)
+        elif typ == 'nil':
+            return typ
         elif typ == 'var':
             match = re.fullmatch(self.var, text)
             if match.group(1) == 'LF':
-                if self.localframe == None:
+                if self.localframe is None:
                     exit(55)
                 else:
                     if match.group(2) not in self.localframe:
                         exit(54)
                     else:
-                        if self.localframe.get(match.group(2)) == None:
+                        if self.localframe.get(match.group(2)) is None:
                             exit(56)
+                        elif self.localframe.get(match.group(2)) == 'nil':
+                            return None
                         else:
                             return self.localframe.get(match.group(2))
             elif match.group(1) == 'GF':
-                if self.globalframe == None:
+                if self.globalframe is None:
                     exit(55)
                 else:
                     if match.group(2) not in self.globalframe:
                         exit(54)
                     else:
-                        if self.globalframe.get(match.group(2)) == None:
+                        if self.globalframe.get(match.group(2)) is None:
                             exit(56)
+                        elif self.globalframe.get(match.group(2)) == 'nil':
+                            return None
                         else:
                             return self.globalframe.get(match.group(2))
             elif match.group(1) == 'TF':
-                if self.tempframe == None:
+                if self.tempframe is None:
                     exit(55)
                 else:
                     if match.group(2) not in self.tempframe:
                         exit(54)
                     else:
-                        if self.tempframe.get(match.group(2)) == None:
+                        if self.tempframe.get(match.group(2)) is None:
                             exit(56)
+                        elif self.tempframe.get(match.group(2)) == 'nil':
+                            return None
                         else:
                             return self.tempframe.get(match.group(2))
+        else:
+            exit(32)
 
     def setvar(self, var, text):
         match = re.fullmatch(self.var, var)
         if match.group(1) == 'LF':
-            if self.localframe == None:
+            if self.localframe is None:
                 exit(55)
             else:
                 if match.group(2) not in self.localframe:
@@ -158,7 +172,7 @@ class Interpet(object):
                 else:
                     self.localframe[match.group(2)] = text
         elif match.group(1) == 'GF':
-            if self.globalframe == None:
+            if self.globalframe is None:
                 exit(55)
             else:
                 if match.group(2) not in self.globalframe:
@@ -166,7 +180,7 @@ class Interpet(object):
                 else:
                     self.globalframe[match.group(2)] = text
         elif match.group(1) == 'TF':
-            if self.tempframe == None:
+            if self.tempframe is None:
                 exit(55)
             else:
                 if match.group(2) not in self.tempframe:
@@ -177,287 +191,284 @@ class Interpet(object):
     def checksamesymbol(self, symb1value, symb2value):
         if isinstance(symb1value, bool) == True and isinstance(symb2value, bool) == True:
             return True
-        elif isinstance(symb1value, int) == True and isinstance(symb2value, int) == True and not isinstance(symb1value,
-                                                                                                            bool) == True and not isinstance(
-                symb2value, bool) == True:
+        elif isinstance(symb1value, int) == True and isinstance(symb2value, int) == True and not isinstance(symb1value, bool) == True and not isinstance(symb2value, bool) == True:
             return True
         elif isinstance(symb1value, str) == True and isinstance(symb2value, str) == True:
+            return True
+        elif symb1value is None and symb2value is None:
             return True
         else:
             return False
 
-    def iopcodecontrol(
-            self):  # Kontrola opcode z moznych variant s vnorenou syntaktickou a lexikalni analyzou pro kazdy opcode
+    def iopcodecontrol(self):  # Kontrola opcode z moznych variant s vnorenou syntaktickou a lexikalni analyzou pro kazdy opcode
         i = 0
         for elem in self.root:
             i = i + 1
             opcode = elem.get('opcode')
             if opcode == 'MOVE':
                 if len(elem) != 2:  # kontrola poctu argumentu
-                    exit(31)
+                    exit(32)
                 else:
-                    if elem[0].get('type') != 'var' or elem[
-                        0].tag != 'arg1':  # kontrola typu a pozice prvniho argumentu
-                        exit(31)
-                    elif re.fullmatch(self.symb, elem[1].get('type')) == None or elem[
-                        1].tag != 'arg2':  # kontrola typu a pozice druheh argumentu
-                        exit(31)
+                    if elem[0].get('type') != 'var' or  elem[0].tag != 'arg1':  # kontrola typu a pozice prvniho argumentu
+                        exit(32)
+                    elif re.fullmatch(self.symb, elem[1].get('type')) is None or elem[1].tag != 'arg2':  # kontrola typu a pozice druheh argumentu
+                        exit(32)
                     else:
                         self.checkvar(elem[0].text)  # volani funkce pro lexikalni kontrolu prvniho argumentu
                         self.checksymbol(elem[1].get('type'),
                                          elem[1].text)  # volani funkce pro lexikalni kontrolu druheho argumentu
             elif opcode == 'CREATEFRAME':
                 if len(elem) != 0:
-                    exit(31)
+                    exit(32)
             elif opcode == 'PUSHFRAME':
                 if len(elem) != 0:
-                    exit(31)
+                    exit(32)
             elif opcode == 'POPFRAME':
                 if len(elem) != 0:
-                    exit(31)
+                    exit(32)
             elif opcode == 'DEFVAR':
                 if len(elem) != 1:
-                    exit(31)
+                    exit(32)
                 else:
                     if elem[0].get('type') != 'var' or elem[0].tag != 'arg1':
-                        exit(31)
+                        exit(32)
                     else:
                         self.checkvar(elem[0].text)
             elif opcode == 'CALL':
                 if len(elem) != 1:
-                    exit(31)
+                    exit(32)
                 else:
                     if elem[0].get('type') != 'label' or elem[0].tag != 'arg1':
-                        exit(31)
+                        exit(32)
                     else:
                         self.checklabel(elem[0].text)
             elif opcode == 'RETURN':
                 if len(elem) != 0:
-                    exit(31)
+                    exit(32)
             elif opcode == 'PUSHS':
                 if len(elem) != 1:
-                    exit(31)
+                    exit(32)
                 else:
-                    if re.fullmatch(self.symb, elem[0].get('type')) == None or elem[0].tag != 'arg1':
-                        exit(31)
+                    if re.fullmatch(self.symb, elem[0].get('type')) is None or elem[0].tag != 'arg1':
+                        exit(32)
                     else:
                         self.checksymbol(elem[0].get('type'), elem[0].text)
             elif opcode == 'POPS':
                 if len(elem) != 1:
-                    exit(31)
+                    exit(32)
                 else:
                     if elem[0].get('type') != 'var' or elem[0].tag != 'arg1':
-                        exit(31)
+                        exit(32)
                     else:
                         self.checkvar(elem[0].text)
             elif opcode == 'ADD':
                 if len(elem) != 3:
-                    exit(31)
+                    exit(32)
                 else:
                     if elem[0].get('type') != 'var' or elem[0].tag != 'arg1':
-                        exit(31)
-                    elif re.fullmatch(self.symb, elem[1].get('type')) == None or elem[1].tag != 'arg2':
-                        exit(31)
-                    elif re.fullmatch(self.symb, elem[2].get('type')) == None or elem[2].tag != 'arg3':
-                        exit(31)
+                        exit(32)
+                    elif re.fullmatch(self.symb, elem[1].get('type')) is None or elem[1].tag != 'arg2':
+                        exit(32)
+                    elif re.fullmatch(self.symb, elem[2].get('type')) is None or elem[2].tag != 'arg3':
+                        exit(32)
                     else:
                         self.checkvar(elem[0].text)
                         self.checksymbol(elem[1].get('type'), elem[1].text)
                         self.checksymbol(elem[2].get('type'), elem[2].text)
             elif opcode == 'SUB':
                 if len(elem) != 3:
-                    exit(31)
+                    exit(32)
                 else:
                     if elem[0].get('type') != 'var' or elem[0].tag != 'arg1':
-                        exit(31)
-                    elif re.fullmatch(self.symb, elem[1].get('type')) == None or elem[1].tag != 'arg2':
-                        exit(31)
-                    elif re.fullmatch(self.symb, elem[2].get('type')) == None or elem[2].tag != 'arg3':
-                        exit(31)
+                        exit(32)
+                    elif re.fullmatch(self.symb, elem[1].get('type')) is None or elem[1].tag != 'arg2':
+                        exit(32)
+                    elif re.fullmatch(self.symb, elem[2].get('type')) is None or elem[2].tag != 'arg3':
+                        exit(32)
                     else:
                         self.checkvar(elem[0].text)
                         self.checksymbol(elem[1].get('type'), elem[1].text)
                         self.checksymbol(elem[2].get('type'), elem[2].text)
             elif opcode == 'MUL':
                 if len(elem) != 3:
-                    exit(31)
+                    exit(32)
                 else:
                     if elem[0].get('type') != 'var' or elem[0].tag != 'arg1':
-                        exit(31)
-                    elif re.fullmatch(self.symb, elem[1].get('type')) == None or elem[1].tag != 'arg2':
-                        exit(31)
-                    elif re.fullmatch(self.symb, elem[2].get('type')) == None or elem[2].tag != 'arg3':
-                        exit(31)
+                        exit(32)
+                    elif re.fullmatch(self.symb, elem[1].get('type')) is None or elem[1].tag != 'arg2':
+                        exit(32)
+                    elif re.fullmatch(self.symb, elem[2].get('type')) is None or elem[2].tag != 'arg3':
+                        exit(32)
                     else:
                         self.checkvar(elem[0].text)
                         self.checksymbol(elem[1].get('type'), elem[1].text)
                         self.checksymbol(elem[2].get('type'), elem[2].text)
             elif opcode == 'IDIV':
                 if len(elem) != 3:
-                    exit(31)
+                    exit(32)
                 else:
                     if elem[0].get('type') != 'var' or elem[0].tag != 'arg1':
-                        exit(31)
-                    elif re.fullmatch(self.symb, elem[1].get('type')) == None or elem[1].tag != 'arg2':
-                        exit(31)
-                    elif re.fullmatch(self.symb, elem[2].get('type')) == None or elem[2].tag != 'arg3':
-                        exit(31)
+                        exit(32)
+                    elif re.fullmatch(self.symb, elem[1].get('type')) is None or elem[1].tag != 'arg2':
+                        exit(32)
+                    elif re.fullmatch(self.symb, elem[2].get('type')) is None or elem[2].tag != 'arg3':
+                        exit(32)
                     else:
                         self.checkvar(elem[0].text)
                         self.checksymbol(elem[1].get('type'), elem[1].text)
                         self.checksymbol(elem[2].get('type'), elem[2].text)
             elif opcode == 'LT' or opcode == 'GT' or opcode == 'EQ':
                 if len(elem) != 3:
-                    exit(31)
+                    exit(32)
                 else:
                     if elem[0].get('type') != 'var' or elem[0].tag != 'arg1':
-                        exit(31)
-                    elif re.fullmatch(self.symb, elem[1].get('type')) == None or elem[1].tag != 'arg2':
-                        exit(31)
-                    elif re.fullmatch(self.symb, elem[2].get('type')) == None or elem[2].tag != 'arg3':
-                        exit(31)
+                        exit(32)
+                    elif re.fullmatch(self.symb, elem[1].get('type')) is None or elem[1].tag != 'arg2':
+                        exit(32)
+                    elif re.fullmatch(self.symb, elem[2].get('type')) is None or elem[2].tag != 'arg3':
+                        exit(32)
                     else:
                         self.checkvar(elem[0].text)
                         self.checksymbol(elem[1].get('type'), elem[1].text)
                         self.checksymbol(elem[2].get('type'), elem[2].text)
             elif opcode == 'AND' or opcode == 'OR':
                 if len(elem) != 3:
-                    exit(31)
+                    exit(32)
                 else:
                     if elem[0].get('type') != 'var' or elem[0].tag != 'arg1':
-                        exit(31)
-                    elif re.fullmatch(self.symb, elem[1].get('type')) == None or elem[1].tag != 'arg2':
-                        exit(31)
-                    elif re.fullmatch(self.symb, elem[2].get('type')) == None or elem[2].tag != 'arg3':
-                        exit(31)
+                        exit(32)
+                    elif re.fullmatch(self.symb, elem[1].get('type')) is None or elem[1].tag != 'arg2':
+                        exit(32)
+                    elif re.fullmatch(self.symb, elem[2].get('type')) is None or elem[2].tag != 'arg3':
+                        exit(32)
                     else:
                         self.checkvar(elem[0].text)
                         self.checksymbol(elem[1].get('type'), elem[1].text)
                         self.checksymbol(elem[2].get('type'), elem[2].text)
             elif opcode == 'NOT':
                 if len(elem) != 2:
-                    exit(31)
+                    exit(32)
                 else:
                     if elem[0].get('type') != 'var' or elem[0].tag != 'arg1':
-                        exit(31)
-                    elif re.fullmatch(self.symb, elem[1].get('type')) == None or elem[1].tag != 'arg2':
-                        exit(31)
+                        exit(32)
+                    elif re.fullmatch(self.symb, elem[1].get('type')) is None or elem[1].tag != 'arg2':
+                        exit(32)
                     else:
                         self.checkvar(elem[0].text)
                         self.checksymbol(elem[1].get('type'), elem[1].text)
             elif opcode == 'INT2CHAR':
                 if len(elem) != 2:
-                    exit(31)
+                    exit(32)
                 else:
                     if elem[0].get('type') != 'var' or elem[0].tag != 'arg1':
-                        exit(31)
-                    elif re.fullmatch(self.symb, elem[1].get('type')) == None or elem[1].tag != 'arg2':
-                        exit(31)
+                        exit(32)
+                    elif re.fullmatch(self.symb, elem[1].get('type')) is None or elem[1].tag != 'arg2':
+                        exit(32)
                     else:
                         self.checkvar(elem[0].text)
                         self.checksymbol(elem[1].get('type'), elem[1].text)
             elif opcode == 'STRI2INT':
                 if len(elem) != 3:
-                    exit(31)
+                    exit(32)
                 else:
                     if elem[0].get('type') != 'var' or elem[0].tag != 'arg1':
-                        exit(31)
-                    elif re.fullmatch(self.symb, elem[1].get('type')) == None or elem[1].tag != 'arg2':
-                        exit(31)
-                    elif re.fullmatch(self.symb, elem[2].get('type')) == None or elem[2].tag != 'arg3':
-                        exit(31)
+                        exit(32)
+                    elif re.fullmatch(self.symb, elem[1].get('type')) is None or elem[1].tag != 'arg2':
+                        exit(32)
+                    elif re.fullmatch(self.symb, elem[2].get('type')) is None or elem[2].tag != 'arg3':
+                        exit(32)
                     else:
                         self.checkvar(elem[0].text)
                         self.checksymbol(elem[1].get('type'), elem[1].text)
                         self.checksymbol(elem[2].get('type'), elem[2].text)
             elif opcode == 'READ':
                 if len(elem) != 2:
-                    exit(31)
+                    exit(32)
                 else:
                     if elem[0].get('type') != 'var' or elem[0].tag != 'arg1':
-                        exit(31)
+                        exit(32)
                     elif elem[1].get('type') != 'type' or elem[1].tag != 'arg2':
-                        exit(31)
+                        exit(32)
                     self.checkvar(elem[0].text)
                     self.checktype(elem[1].text)
             elif opcode == 'WRITE':
                 if len(elem) != 1:
-                    exit(31)
+                    exit(32)
                 else:
-                    if re.fullmatch(self.symb, elem[0].get('type')) == None or elem[0].tag != 'arg1':
-                        exit(31)
+                    if re.fullmatch(self.symb, elem[0].get('type')) is None or elem[0].tag != 'arg1':
+                        exit(32)
                     else:
                         self.checksymbol(elem[0].get('type'), elem[0].text)
             elif opcode == 'CONCAT':
                 if len(elem) != 3:
-                    exit(31)
+                    exit(32)
                 else:
                     if elem[0].get('type') != 'var' or elem[0].tag != 'arg1':
-                        exit(31)
-                    elif re.fullmatch(self.symb, elem[1].get('type')) == None or elem[1].tag != 'arg2':
-                        exit(31)
-                    elif re.fullmatch(self.symb, elem[2].get('type')) == None or elem[2].tag != 'arg3':
-                        exit(31)
+                        exit(32)
+                    elif re.fullmatch(self.symb, elem[1].get('type')) is None or elem[1].tag != 'arg2':
+                        exit(32)
+                    elif re.fullmatch(self.symb, elem[2].get('type')) is None or elem[2].tag != 'arg3':
+                        exit(32)
                     else:
                         self.checkvar(elem[0].text)
                         self.checksymbol(elem[1].get('type'), elem[1].text)
                         self.checksymbol(elem[2].get('type'), elem[2].text)
             elif opcode == 'STRLEN':
                 if len(elem) != 2:
-                    exit(31)
+                    exit(32)
                 else:
                     if elem[0].get('type') != 'var' or elem[0].tag != 'arg1':
-                        exit(31)
-                    elif re.fullmatch(self.symb, elem[1].get('type')) == None or elem[1].tag != 'arg2':
-                        exit(31)
+                        exit(32)
+                    elif re.fullmatch(self.symb, elem[1].get('type')) is None or elem[1].tag != 'arg2':
+                        exit(32)
                     else:
                         self.checkvar(elem[0].text)
                         self.checksymbol(elem[1].get('type'), elem[1].text)
             elif opcode == 'GETCHAR':
                 if len(elem) != 3:
-                    exit(31)
+                    exit(32)
                 else:
                     if elem[0].get('type') != 'var' or elem[0].tag != 'arg1':
-                        exit(31)
-                    elif re.fullmatch(self.symb, elem[1].get('type')) == None or elem[1].tag != 'arg2':
-                        exit(31)
-                    elif re.fullmatch(self.symb, elem[2].get('type')) == None or elem[2].tag != 'arg3':
-                        exit(31)
+                        exit(32)
+                    elif re.fullmatch(self.symb, elem[1].get('type')) is None or elem[1].tag != 'arg2':
+                        exit(32)
+                    elif re.fullmatch(self.symb, elem[2].get('type')) is None or elem[2].tag != 'arg3':
+                        exit(32)
                     else:
                         self.checkvar(elem[0].text)
                         self.checksymbol(elem[1].get('type'), elem[1].text)
                         self.checksymbol(elem[2].get('type'), elem[2].text)
             elif opcode == 'SETCHAR':
                 if len(elem) != 3:
-                    exit(31)
+                    exit(32)
                 else:
                     if elem[0].get('type') != 'var' or elem[0].tag != 'arg1':
-                        exit(31)
-                    elif re.fullmatch(self.symb, elem[1].get('type')) == None or elem[1].tag != 'arg2':
-                        exit(31)
-                    elif re.fullmatch(self.symb, elem[2].get('type')) == None or elem[2].tag != 'arg3':
-                        exit(31)
+                        exit(32)
+                    elif re.fullmatch(self.symb, elem[1].get('type')) is None or elem[1].tag != 'arg2':
+                        exit(32)
+                    elif re.fullmatch(self.symb, elem[2].get('type')) is None or elem[2].tag != 'arg3':
+                        exit(32)
                     else:
                         self.checkvar(elem[0].text)
                         self.checksymbol(elem[1].get('type'), elem[1].text)
                         self.checksymbol(elem[2].get('type'), elem[2].text)
             elif opcode == 'TYPE':
                 if len(elem) != 2:
-                    exit(31)
+                    exit(32)
                 else:
                     if elem[0].get('type') != 'var' or elem[0].tag != 'arg1':
-                        exit(31)
-                    elif re.fullmatch(self.symb, elem[1].get('type')) == None or elem[1].tag != 'arg2':
-                        exit(31)
+                        exit(32)
+                    elif re.fullmatch(self.symb, elem[1].get('type')) is None or elem[1].tag != 'arg2':
+                        exit(32)
                     else:
                         self.checkvar(elem[0].text)
                         self.checksymbol(elem[1].get('type'), elem[1].text)
             elif opcode == 'LABEL':
                 if len(elem) != 1:
-                    exit(31)
+                    exit(32)
                 else:
                     if elem[0].get('type') != 'label' or elem[0].tag != 'arg1':
-                        exit(31)
+                        exit(32)
                     else:
                         self.checklabel(elem[0].text)
                         if elem[0].text in self.labels:
@@ -466,53 +477,61 @@ class Interpet(object):
                             self.labels.setdefault(elem[0].text, i)
             elif opcode == 'JUMP':
                 if len(elem) != 1:
-                    exit(31)
+                    exit(32)
                 else:
                     if elem[0].get('type') != 'label' or elem[0].tag != 'arg1':
-                        exit(31)
+                        exit(32)
                     else:
                         self.checklabel(elem[0].text)
             elif opcode == 'JUMPIFEQ':
                 if len(elem) != 3:
-                    exit(31)
+                    exit(32)
                 else:
                     if elem[0].get('type') != 'label' or elem[0].tag != 'arg1':
-                        exit(31)
-                    elif re.fullmatch(self.symb, elem[1].get('type')) == None or elem[1].tag != 'arg2':
-                        exit(31)
-                    elif re.fullmatch(self.symb, elem[2].get('type')) == None or elem[2].tag != 'arg3':
-                        exit(31)
+                        exit(32)
+                    elif re.fullmatch(self.symb, elem[1].get('type')) is None or elem[1].tag != 'arg2':
+                        exit(32)
+                    elif re.fullmatch(self.symb, elem[2].get('type')) is None or elem[2].tag != 'arg3':
+                        exit(32)
                     else:
                         self.checklabel(elem[0].text)
                         self.checksymbol(elem[1].get('type'), elem[1].text)
                         self.checksymbol(elem[2].get('type'), elem[2].text)
             elif opcode == 'JUMPIFNEQ':
                 if len(elem) != 3:
-                    exit(31)
+                    exit(32)
                 else:
                     if elem[0].get('type') != 'label' or elem[0].tag != 'arg1':
-                        exit(31)
-                    elif re.fullmatch(self.symb, elem[1].get('type')) == None or elem[1].tag != 'arg2':
-                        exit(31)
-                    elif re.fullmatch(self.symb, elem[2].get('type')) == None or elem[2].tag != 'arg3':
-                        exit(31)
+                        exit(32)
+                    elif re.fullmatch(self.symb, elem[1].get('type')) is None or elem[1].tag != 'arg2':
+                        exit(32)
+                    elif re.fullmatch(self.symb, elem[2].get('type')) is None or elem[2].tag != 'arg3':
+                        exit(32)
                     else:
                         self.checklabel(elem[0].text)
                         self.checksymbol(elem[1].get('type'), elem[1].text)
                         self.checksymbol(elem[2].get('type'), elem[2].text)
             elif opcode == 'DPRINT':
                 if len(elem) != 1:
-                    exit(31)
+                    exit(32)
                 else:
-                    if re.fullmatch(self.symb, elem[0].get('type')) == None or elem[0].tag != 'arg1':
-                        exit(31)
+                    if re.fullmatch(self.symb, elem[0].get('type')) is None or elem[0].tag != 'arg1':
+                        exit(32)
                     else:
                         self.checksymbol(elem[0].get('type'), elem[0].text)
             elif opcode == 'BREAK':
                 if len(elem) != 0:
-                    exit(31)
+                    exit(32)
                 else:
                     pass
+            elif opcode == 'EXIT':
+                if len(elem) != 1:
+                    exit(32)
+                else:
+                    if re.fullmatch(self.symb, elem[0].get('type')) is None or elem[0].tag != 'arg1':
+                        exit(32)
+                    else:
+                        self.checksymbol(elem[0].get('type'), elem[0].text)
             else:
                 exit(32)
 
@@ -526,7 +545,7 @@ class Interpet(object):
                 self.tempframe = {}
 
             elif opcode == 'PUSHFRAME':
-                if self.tempframe == None:
+                if self.tempframe is None:
                     exit(55)
                 if self.localframe != None:
                     self.framearray.append(self.localframe)
@@ -534,7 +553,7 @@ class Interpet(object):
                 self.tempframe = None
 
             elif opcode == 'POPFRAME':
-                if self.localframe == None:
+                if self.localframe is None:
                     exit(55)
                 else:
                     self.tempframe = self.localframe
@@ -546,17 +565,17 @@ class Interpet(object):
             elif opcode == 'DEFVAR':
                 match = re.fullmatch(self.var, elem[0].text)
                 if match.group(1) == 'LF':
-                    if self.localframe == None:
+                    if self.localframe is None:
                         exit(55)
                     else:
                         self.localframe.setdefault(match.group(2))
                 elif match.group(1) == 'GF':
-                    if self.globalframe == None:
+                    if self.globalframe is None:
                         exit(55)
                     else:
                         self.globalframe.setdefault(match.group(2))
                 elif match.group(1) == 'TF':
-                    if self.tempframe == None:
+                    if self.tempframe is None:
                         exit(55)
                     else:
                         self.tempframe.setdefault(match.group(2))
@@ -567,13 +586,12 @@ class Interpet(object):
             elif opcode == 'WRITE':
                 varvalue = self.returnsymboltype(elem[0].get('type'), elem[0].text)
                 if isinstance(varvalue, bool) == False:
-
-                    print(varvalue)
+                    print(varvalue, end='')
                 else:
                     if varvalue == True:
-                        print('true')
+                        print('true', end='')
                     else:
-                        print('false')
+                        print('false', end='')
 
             elif opcode == 'ADD':
                 symb1value = self.returnsymboltype(elem[1].get('type'), elem[1].text)
@@ -748,27 +766,36 @@ class Interpet(object):
                 symb1value = self.returnsymboltype(elem[1].get('type'), elem[1].text)
                 symb2value = self.returnsymboltype(elem[2].get('type'), elem[2].text)
                 if self.checksamesymbol(symb1value, symb2value) == False and elem[1].get('type') == 'var':
-                    exit(53)
+                    if symb1value is None or symb2value is None:
+                        symbvalue = False
                 elif self.checksamesymbol(symb1value, symb2value) == False and elem[2].get('type') == 'var':
-                    exit(53)
-                elif self.checksamesymbol(symb1value, symb2value) == False and elem[1].get('type') != 'var':
-                    exit(52)
-                elif self.checksamesymbol(symb1value, symb2value) == False and elem[2].get('type') != 'var':
-                    exit(52)
+                    if symb1value is None or symb2value is None:
+                        symbvalue = False
+                else:
+                    if self.checksamesymbol(symb1value, symb2value) == False and elem[1].get('type') == 'var':
+                        exit(53)
+                    elif self.checksamesymbol(symb1value, symb2value) == False and elem[2].get('type') == 'var':
+                        exit(53)
+                    elif self.checksamesymbol(symb1value, symb2value) == False and elem[1].get('type') != 'var':
+                        exit(52)
+                    elif self.checksamesymbol(symb1value, symb2value) == False and elem[2].get('type') != 'var':
+                        exit(52)
 
-                if isinstance(symb1value, int) == True and isinstance(symb2value, int) == True:
-                    symbvalue = symb1value == symb2value
-                elif isinstance(symb1value, bool) == True and isinstance(symb2value, bool) == True:
-                    if symb1value == False and symb2value == False:
+                    if isinstance(symb1value, int) == True and isinstance(symb2value, int) == True:
+                        symbvalue = symb1value == symb2value
+                    elif isinstance(symb1value, bool) == True and isinstance(symb2value, bool) == True:
+                        if symb1value == False and symb2value == False:
+                            symbvalue = True
+                        elif symb1value == False and symb2value == True:
+                            symbvalue = False
+                        elif symb1value == True and symb2value == False:
+                            symbvalue = False
+                        elif symb1value == True and symb2value == True:
+                            symbvalue = True
+                    elif isinstance(symb1value, str) == True and isinstance(symb2value, str) == True:
+                        symbvalue = symb1value == symb2value
+                    elif symb1value is None and symb2value is None:
                         symbvalue = True
-                    elif symb1value == False and symb2value == True:
-                        symbvalue = False
-                    elif symb1value == True and symb2value == False:
-                        symbvalue = False
-                    elif symb1value == True and symb2value == True:
-                        symbvalue = True
-                elif isinstance(symb1value, str) == True and isinstance(symb2value, str) == True:
-                    symbvalue = symb1value == symb2value
                 self.setvar(elem[0].text, symbvalue)
 
             elif opcode == 'TYPE':
@@ -777,40 +804,40 @@ class Interpet(object):
                 else:
                     match = re.fullmatch(self.var, elem[1].text)
                     if match.group(1) == 'LF':
-                        if self.localframe == None:
+                        if self.localframe is None:
                             exit(55)
                         else:
                             if match.group(2) not in self.localframe:
                                 exit(54)
                             else:
-                                if self.localframe.get(match.group(2)) == None:
+                                if self.localframe.get(match.group(2)) is None:
                                     symbvalue = None
                                 else:
                                     symbvalue = self.localframe.get(match.group(2))
                     elif match.group(1) == 'GF':
-                        if self.globalframe == None:
+                        if self.globalframe is None:
                             exit(55)
                         else:
                             if match.group(2) not in self.globalframe:
                                 exit(54)
                             else:
-                                if self.globalframe.get(match.group(2)) == None:
+                                if self.globalframe.get(match.group(2)) is None:
                                     symbvalue = None
                                 else:
                                     symbvalue = self.globalframe.get(match.group(2))
                     elif match.group(1) == 'TF':
-                        if self.tempframe == None:
+                        if self.tempframe is None:
                             exit(55)
                         else:
                             if match.group(2) not in self.tempframe:
                                 exit(54)
                             else:
-                                if self.tempframe.get(match.group(2)) == None:
+                                if self.tempframe.get(match.group(2)) is None:
                                     symbvalue = None
                                 else:
                                     symbvalue = self.tempframe.get(match.group(2))
 
-                if symbvalue == None:
+                if symbvalue is None:
                     symbvalue = ""
                 elif isinstance(symbvalue, bool) == True:
                     symbvalue = 'bool'
@@ -974,7 +1001,7 @@ class Interpet(object):
                 elif isinstance(symb2value, str) == False and elem[2].get('type') == 'var':
                     exit(53)
                 if (isinstance(varvalue, str) == False):
-                    exit(52)
+                    exit(53)
                 else:
                     if symb2value == '' or ((symb1value < 0) or symb1value >= (len(varvalue))):
                         exit(58)
@@ -986,7 +1013,10 @@ class Interpet(object):
                             varvalue = tempvar + symb2value[0]
                         self.setvar(elem[0].text, varvalue)
             elif opcode == 'READ':
-                value = input()
+                try:
+                    value = input()
+                except Exception as e:
+                    value = None
                 if elem[1].text == 'int':
                     try:
                         varvalue = int(value)
@@ -994,11 +1024,23 @@ class Interpet(object):
                         varvalue = 0
                 elif elem[1].text == 'string':
                     varvalue = value
+                elif elem[1].text == 'bool' and value is None:
+                    varvalue = False
                 elif elem[1].text == 'bool' and value.lower() == 'true':
                     varvalue = True
                 else:
                     varvalue = False
                 self.setvar(elem[0].text, varvalue)
+            elif opcode == 'EXIT':
+                symbvalue = self.returnsymboltype(elem[0].get('type'), elem[0].text)
+                if not isinstance(symbvalue, int):
+                    exit(53)
+                if symbvalue >= 0 and symbvalue <= 49:
+                    exit(symbvalue)
+                else:
+                    exit(57)
+
+
 
 
 Interpet()
