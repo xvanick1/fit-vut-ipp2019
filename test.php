@@ -212,7 +212,7 @@ foreach ($src as $run_test) {
         }
         $xml_ref_input_file = substr($run_test, 0, -3) . "out";
         if ($parse_only_flag == true && $return_parser == 0) {
-            exec("java -jar /pub/courses/ipp/jexamxml " . stream_get_meta_data($TemporaryParser)["uri"] . " $xml_ref_input_file ./options > /dev/null 2>/dev/null", $output_parser, $return_parser);
+            exec("java -jar /pub/courses/ipp/jexamxml/jexamxml.jar " . stream_get_meta_data($TemporaryParser)["uri"] . " $xml_ref_input_file /dev/null /pub/courses/ipp/jexamxml/options > /dev/null 2>/dev/null", $output_parser, $return_parser);
             if ($return_parser == 0) {
                 echo "<p><font color=\"green\"><b>SUCC</b></font> Parse test <i>$run_test_path</i> ended with return code:<font color=\"green\"><b> 0 </b></font></p>";
                 $succTestsCounter++;
