@@ -178,13 +178,17 @@ $failTestsCounter = 0;
 
 foreach ($src as $run_test) {
     if (!($TemporaryParser = tmpfile()) || !($TemporaryInterpret = tmpfile())) {
-        fprintf(STDERR, "Internal Error: Failed to create temporary file\n");
+        fprintf(STDERR, "Internal Error: Failed to create temporary file.\n");
         exit(99);
     }
 
     $existenceArgument = "File";
-    if (!($in = fopen(substr($run_test, 0, -3) . "in", "c+")) || !($rc = fopen(substr($run_test, 0, -3) . "rc", "c+")) || !($out = fopen(substr($run_test, 0, -3) . "out", "c+"))) {
+    if (!($in = fopen(substr($run_test, 0, -3) . "in", "c+")) || !($rc = fopen(substr($run_test, 0, -3) . "rc", "c+"))) {
         existenceErr($existenceArgument);
+    }
+    elseif (!($out = fopen(substr($run_test, 0, -3) . "out", "c+"))){
+        fprintf(STDERR, "Error: Failed opening output file, maybe insufficient permissions to file.\n");
+        exit(12);
     }
 
     if (filesize(substr($run_test, 0, -3) . "rc") == 0) {
@@ -229,11 +233,11 @@ foreach ($src as $run_test) {
     if ($parse_only_flag == false && $return_parser == 0) {
         $input_name = substr($run_test, 0, -3) . "in";
         $output_name = substr($run_test, 0, -3) . "out";
-        $output_int = substr($run_test, 0, -3) . "int";
+        $output_int = stream_get_meta_data($TemporaryInterpret)["uri"];
         if ($int_only_flag == true) {
-            exec("python3.6 $defaultInterpretFile --source=" . $run_test . " < $input_name > $output_int 2>/dev/null ", $output_interpret, $return_interpret);
+            exec("python3.6 $defaultInterpretFile --source=" . $run_test . " < $input_name 2>/dev/null ", $output_interpret, $return_interpret);
         } else {
-            exec("python3.6 $defaultInterpretFile --source=" . stream_get_meta_data($TemporaryParser)["uri"] . " < $input_name > $output_int 2>/dev/null ", $output_interpret, $return_interpret);
+            exec("python3.6 $defaultInterpretFile --source=" . stream_get_meta_data($TemporaryParser)["uri"] . " < $input_name 2>/dev/null ", $output_interpret, $return_interpret);
         }
         if ($return_interpret == 0) {
             exec("diff $output_name $output_int", $out_diff, $ret_diff);
