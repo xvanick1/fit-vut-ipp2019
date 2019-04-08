@@ -143,7 +143,7 @@ if ($argc > 5) { //Kontrola počtu vstupných argumentov
             pathErr($existenceArgument);
         }
     }
-    if ($argument == false) { //Zadaný neznámy argument
+    if ($argument == false && $argc > 1) { //Zadaný neznámy argument
         fprintf(STDERR, "Error: Unknown argument used!\n");
         exit(10);
     } elseif ((array_key_exists("parse-only", $argument) && array_key_exists("int-only", $argument)) || (array_key_exists("parse-only", $argument) && ($in_flag == true)) || (array_key_exists("int-only", $argument) && ($parse_flag == true))) { //Zadaná nepovolená kombinácia argumentov
