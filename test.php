@@ -223,13 +223,14 @@ foreach ($src as $run_test) {
             }
         } else if ($return_parser == $ret_code) {
             echo "<p><font color=\"green\"><b>SUCC</b></font> Parse test <i>$run_test_path</i> ended with return code:<font color=\"green\"><b> $return_parser </b></font></p>";
-            $succTestsCounter++;
         } else if ($return_parser != $ret_code && $ret_code < 29 ) {
             echo "<p><font color=\"red\"><b>FAIL</b></font> Parse test <i>$run_test_path</i> ended with return code:<font color=\"red\"><b> $return_parser </b></font>(Expected code: $ret_code)</p>";
             $failTestsCounter++;
-        } else {
+        } else if ($return_parser == 0 && $ret_code > 30) {
             echo "<p><font color=\"green\"><b>SUCC</b></font> Parse test <i>$run_test_path</i> ended with return code:<font color=\"green\"><b> $return_parser </b></font></p>";
-            $succTestsCounter++;
+        } else {
+            echo "<p><font color=\"red\"><b>FAIL</b></font> Parse test <i>$run_test_path</i> ended with return code:<font color=\"red\"><b> $return_parser </b></font>(Expected code: 0)</p>";
+            $failTestsCounter++;
         }
     }
 
@@ -245,6 +246,26 @@ foreach ($src as $run_test) {
         } else {
             exec("python3.6 $defaultInterpretFile --source=" . stream_get_meta_data($TemporaryParser)["uri"] . " < $input_name 2>/dev/null ", $output_interpret, $return_interpret);
         }
+
+        $run_test_path = str_replace('/^.*\/$/', " ", $run_test);
+        if ($return_interpret == $ret_code && $return_interpret == 0) { // diff output
+            exec("diff $output_name $output_int", $out_diff, $ret_diff);
+            if ($ret_diff == 0) {
+                echo "<p><font color=\"green\"><b>SUCC</b></font> Interpret <i>test $run_test_path</i> ended with return code:<font color=\"green\"><b> $return_interpret </b></font></p>";
+                $succTestsCounter++;
+            } else {
+                echo "<p><font color=\"red\"><b>FAIL</b></font> Interpret test <i>$run_test_path</i> ended with <font color=\"red\"><b>diff error </b></font></p>";
+                $failTestsCounter++;
+            }
+        } else if ($return_interpret == $ret_code) {
+            echo "<p><font color=\"green\"><b>SUCC</b></font> Interpret <i>test $run_test_path</i> ended with return code:<font color=\"green\"><b> $return_interpret </b></font></p>";
+            $succTestsCounter++;
+        } else {
+            echo "<p><font color=\"red\"><b>FAIL</b></font> Interpret test <i>$run_test_path</i> ended with <font color=\"red\"><b>$return_interpret </b></font>(Expected code: $ret_code)</p>";
+            $failTestsCounter++;
+        }
+
+        /*
         if ($return_interpret == 0) {
             exec("diff $output_name $output_int", $out_diff, $ret_diff);
             $run_test_path = str_replace('/^.*\/$/', " ", $run_test);
@@ -277,6 +298,7 @@ foreach ($src as $run_test) {
                 $failTestsCounter++;
             }
         }
+        */
     }
     fclose($TemporaryParser);
     fclose($TemporaryInterpret);
