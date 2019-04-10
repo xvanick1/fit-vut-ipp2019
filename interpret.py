@@ -10,7 +10,11 @@ import argparse
 import xml.etree.ElementTree as XMLElemTree
 import re
 
-instructionList = ["MOVE","CREATEFRAME","PUSHFRAME","POPFRAME","DEFVAR","CALL","RETURN","PUSHS","POPS","ADD","SUB","MUL","IDIV","LT","GT","EQ","AND","OR","NOT","INT2CHAR","STRI2INT","READ","WRITE","CONCAT","STRLEN","GETCHAR","SETCHAR","TYPE","LABEL","JUMP","JUMPIFEQ","JUPIFNEQ","EXIT","DPRINT","BREAK"]
+instructionList = ["MOVE", "CREATEFRAME", "PUSHFRAME", "POPFRAME", "DEFVAR", "CALL", "RETURN", "PUSHS", "POPS", "ADD",
+                   "SUB", "MUL", "IDIV", "LT", "GT", "EQ", "AND", "OR", "NOT", "INT2CHAR", "STRI2INT", "READ", "WRITE",
+                   "CONCAT", "STRLEN", "GETCHAR", "SETCHAR", "TYPE", "LABEL", "JUMP", "JUMPIFEQ", "JUMPIFNEQ", "EXIT",
+                   "DPRINT", "BREAK"]
+
 
 ## Regulárne výrazy použité pri spracovaní argumentov jednotlivých inštrukcií
 class Regex:
@@ -24,11 +28,13 @@ class Regex:
     nil = r"nil"
     order = r"^[0-9]+$"
 
+
 def checkvar(argtype, value):
     if argtype != 'var':
         err_xml_structure("Error: Argument type is not var!")
     if not re.match(Regex.var, value):
         err_xml_structure("Error: Argument var lexical error!")
+
 
 def checkint(argtype, value):
     if argtype != 'int':
@@ -36,11 +42,13 @@ def checkint(argtype, value):
     if not re.match(Regex.integer, value):
         err_xml_structure("Error: Argument int lexical error!")
 
+
 def checkbool(argtype, value):
     if argtype != 'bool':
         err_xml_structure("Error: Argument type is not bool!")
     if not re.match(Regex.boolean, value):
         err_xml_structure("Error: Argument bool lexical error!")
+
 
 def checklabel(argtype, value):
     if argtype != 'label':
@@ -48,11 +56,13 @@ def checklabel(argtype, value):
     if not re.match(Regex.label, value):
         err_xml_structure("Error: Argument label lexical error!")
 
+
 def checkstring(argtype, value):
     if argtype != 'string':
         err_xml_structure("Error: Argument type is not symb!")
     if not re.match(Regex.string, value):
         err_xml_structure("Error: Argument symb lexical error!")
+
 
 def checknil(argtype, value):
     if argtype != 'nil':
@@ -60,11 +70,13 @@ def checknil(argtype, value):
     if not re.match(Regex.nil, value):
         err_xml_structure("Error: Argument nil lexical error!")
 
+
 def checktype(argtype, value):
     if argtype != 'type':
         err_xml_structure("Error: Argument type is not type!")
     if not re.match(Regex.type, value):
         err_xml_structure("Error: Argument type lexical error!")
+
 
 def checksymb(argtype, value):
     if argtype == 'var':
@@ -77,6 +89,9 @@ def checksymb(argtype, value):
         checkint(argtype, value)
     elif argtype == 'nil':
         checknil(argtype, value)
+    else:
+        err_xml_structure("Error: Argument type lexical error: expected symb!")
+
 
 def checkempty(argtype, value):
     if argtype is not None:
@@ -84,31 +99,38 @@ def checkempty(argtype, value):
     if value is not None:
         err_xml_structure("Error: instruction has many arguments")
 
+
 def parse_argument_value(argtype, value):
     if argtype == 'string' and value is None:
         return ""
     else:
         return value
 
+
 def err_script_argument(text):
     print(text, file=sys.stderr)
     exit(10)
+
 
 def err_input_file(text):
     print(text, file=sys.stderr)
     exit(11)
 
+
 def err_well_formated_xml():
     print("Error: XML is not well formatted!", file=sys.stderr)
     exit(31)
+
 
 def err_xml_structure(text):
     print(text, file=sys.stderr)
     exit(32)
 
+
 def err_semantic():
     print("Error: Semantic error!", file=sys.stderr)
     exit(52)
+
 
 def err_bad_operand():
     print("Error: Wrong operand type!", file=sys.stderr)
@@ -135,11 +157,15 @@ class Interpret:
         self.parse_arguments()
         self.xml_read()
         self.instructions = []
+        self.parse_instructions()
 
     ### Spracovanie vstupných argumentov
     def parse_arguments(self):
-        parser = argparse.ArgumentParser(description="Napoveda k intepret.py. Interpret jazyka IPPcode19, vstupni format XML.", epilog="Musi byt zadan alespon jeden z techto argumentu.")
-        parser.add_argument('-s', '--source', help='zdrojovy soubor ve formatu XML (jinak stdin)', metavar="sourceFile", required=False)
+        parser = argparse.ArgumentParser(
+            description="Napoveda k intepret.py. Interpret jazyka IPPcode19, vstupni format XML.",
+            epilog="Musi byt zadan alespon jeden z techto argumentu.")
+        parser.add_argument('-s', '--source', help='zdrojovy soubor ve formatu XML (jinak stdin)', metavar="sourceFile",
+                            required=False)
         parser.add_argument('-i', '--input', help='vstupni soubor (jinak stdin)', metavar='inputFile', required=False)
 
         if ("--help" in sys.argv) and len(sys.argv) > 2:
@@ -150,7 +176,7 @@ class Interpret:
             if ("--help" in sys.argv) and len(sys.argv) == 2:
                 exit(0)
             else:
-                exit(10) #no print !!!
+                exit(10)  # no print !!!
 
         if not args.source and not args.input:
             err_script_argument("Error: --input or --source required!")
@@ -162,6 +188,7 @@ class Interpret:
                     self.inputFile = open(args.input)
                 except:
                     err_input_file("Error: Input file not found or insufficient permissions!")
+
     ### Načítanie XML reprezentácie zo vstupu
     def xml_read(self):
         try:
@@ -177,7 +204,7 @@ class Interpret:
         for elem in self.root:
             instruction = Instruction()
             if elem.tag != 'instruction':
-                err_xml_structure("Error: not instruction element - found: "+elem.tag)
+                err_xml_structure("Error: not instruction element - found: " + elem.tag)
             if elem.get('order') is None:
                 err_xml_structure("Error: order not defined")
             if re.match(Regex.order, elem.get('order')) is None:
@@ -185,13 +212,13 @@ class Interpret:
             if elem.get('opcode') is None:
                 err_xml_structure("Error: opcode not defined")
             if not elem.get('opcode') in instructionList:
-                err_xml_structure("Error: unknown instruction: "+elem.get('opcode'))
-            if elem.get('order') in instructionOrderList:
+                err_xml_structure("Error: unknown instruction: " + elem.get('opcode'))
+            if int(elem.get('order')) in instructionOrderList:
                 err_xml_structure("Error: duplicate order")
-            instruction.order = elem.get('order')
+            instruction.order = int(elem.get('order'))
             instruction.opcode = elem.get('opcode')
             self.instructions.insert(instruction.order, instruction)
-            self.parse_instruction_arguments(instruction, elem.text)
+            self.parse_instruction_arguments(instruction, elem)
             instructionOrderList.append(instruction.order)
             self.identify_instruction(instruction)
 
@@ -234,19 +261,14 @@ class Interpret:
             checkvar(instruction.arg1type, instruction.arg1value)
             checktype(instruction.arg2type, instruction.arg2value)
             checkempty(instruction.arg3type, instruction.arg3value)
-        elif instruction.opcode == 'ADD' or instruction.opcode == 'SUB' or instruction.opcode == 'MUL' or instruction.opcode == 'IDIV' or instruction.opcode == 'AND' or instruction.opcode == 'OR' or instruction.opcode == 'LT' or instruction.opcode == 'GT' or instruction.opcode == 'EQ' or instruction.opcode == 'STRI2INT' or instruction.opcode == 'CONCAT' or instruction.opcode == 'GETCHAR' or instruction.opcode == 'SETCHAR' or instruction.opcode == 'JUMPIFEQ' or instruction.opcode == 'JUMPIFNEQ':
+        elif instruction.opcode == 'ADD' or instruction.opcode == 'SUB' or instruction.opcode == 'MUL' or instruction.opcode == 'IDIV' or instruction.opcode == 'AND' or instruction.opcode == 'OR' or instruction.opcode == 'LT' or instruction.opcode == 'GT' or instruction.opcode == 'EQ' or instruction.opcode == 'STRI2INT' or instruction.opcode == 'CONCAT' or instruction.opcode == 'GETCHAR' or instruction.opcode == 'SETCHAR':
             checkvar(instruction.arg1type, instruction.arg1value)
             checksymb(instruction.arg2type, instruction.arg2value)
             checksymb(instruction.arg3type, instruction.arg3value)
-            
-
-
-
-
-
-
-
-
+        elif instruction.opcode == 'JUMPIFEQ' or instruction.opcode == 'JUMPIFNEQ':
+            checklabel(instruction.arg1type, instruction.arg1value)
+            checksymb(instruction.arg2type, instruction.arg2value)
+            checksymb(instruction.arg3type, instruction.arg3value)
 
 
 Interpret()
