@@ -13,6 +13,7 @@ $defaultParserFile = "parse.php";
 $defaultInterpretFile = "interpret.py";
 $src = array();
 $argument = getopt(NULL, $arrayOfArguments);
+$countOfParsedArguments = 1;
 
 /* Auxiliary flags */
 $rec_flag = false;
@@ -100,15 +101,19 @@ if ($argc > 5) { //Kontrola počtu vstupných argumentov
     //Identifikácia ďalších argumentov na vstupe
     if (array_key_exists("recursive", $argument)) {
         $rec_flag = true;
+        $countOfParsedArguments++;
     }
     if (array_key_exists("parse-only", $argument)) {
         $parse_only_flag = true;
+        $countOfParsedArguments++;
     }
     if (array_key_exists("int-only", $argument)) {
         $int_only_flag = true;
+        $countOfParsedArguments++;
     }
     if (array_key_exists("directory", $argument)) {
         $dir_flag = true;
+        $countOfParsedArguments++;
         $existenceArgument = "Directory";
         if ($argument["directory"]) {
             $dir = $argument["directory"];
@@ -121,6 +126,7 @@ if ($argc > 5) { //Kontrola počtu vstupných argumentov
     }
     if (array_key_exists("parse-script", $argument)) {
         $parse_flag = true;
+        $countOfParsedArguments++;
         $existenceArgument = "File";
         if ($argument["parse-script"]) {
             $defaultParserFile = $argument["parse-script"];
@@ -133,6 +139,7 @@ if ($argc > 5) { //Kontrola počtu vstupných argumentov
     }
     if (array_key_exists("int-script", $argument)) {
         $in_flag = true;
+        $countOfParsedArguments++;
         $existenceArgument = "File";
         if ($argument["int-script"]) {
             $defaultInterpretFile = $argument["int-script"];
@@ -143,7 +150,8 @@ if ($argc > 5) { //Kontrola počtu vstupných argumentov
             pathErr($existenceArgument);
         }
     }
-    if ($argument == false && $argc > 1) { //Zadaný neznámy argument
+
+    if (($argument == false && $argc > 1) || $countOfParsedArguments != $argc) { //Zadaný neznámy argument TODO: && tam nepasuje, berie aktualne všetky možné argumenty skriptu, neskočí do ifu
         fprintf(STDERR, "Error: Unknown argument used!\n");
         exit(10);
     } elseif ((array_key_exists("parse-only", $argument) && array_key_exists("int-only", $argument)) || (array_key_exists("parse-only", $argument) && ($in_flag == true)) || (array_key_exists("int-only", $argument) && ($parse_flag == true))) { //Zadaná nepovolená kombinácia argumentov
@@ -185,8 +193,7 @@ foreach ($src as $run_test) {
     $existenceArgument = "File";
     if (!($in = fopen(substr($run_test, 0, -3) . "in", "c+")) || !($rc = fopen(substr($run_test, 0, -3) . "rc", "c+"))) {
         existenceErr($existenceArgument);
-    }
-    elseif (!($out = fopen(substr($run_test, 0, -3) . "out", "c+"))){
+    } elseif (!($out = fopen(substr($run_test, 0, -3) . "out", "c+"))) {
         fprintf(STDERR, "Error: Failed opening output file, maybe insufficient permissions to file.\n");
         exit(12);
     }
@@ -223,7 +230,7 @@ foreach ($src as $run_test) {
             }
         } else if ($return_parser == $ret_code) {
             echo "<p><font color=\"green\"><b>SUCC</b></font> Parse test <i>$run_test_path</i> ended with return code:<font color=\"green\"><b> $return_parser </b></font></p>";
-        } else if ($return_parser != $ret_code && $ret_code < 29 ) {
+        } else if ($return_parser != $ret_code && $ret_code < 29) {
             echo "<p><font color=\"red\"><b>FAIL</b></font> Parse test <i>$run_test_path</i> ended with return code:<font color=\"red\"><b> $return_parser </b></font>(Expected code: $ret_code)</p>";
             $failTestsCounter++;
         } else if ($return_parser == 0 && $ret_code > 30) {
