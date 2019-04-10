@@ -271,41 +271,6 @@ foreach ($src as $run_test) {
             echo "<p><font color=\"red\"><b>FAIL</b></font> Interpret test <i>$run_test_path</i> ended with <font color=\"red\"><b>$return_interpret </b></font>(Expected code: $ret_code)</p>";
             $failTestsCounter++;
         }
-
-        /*
-        if ($return_interpret == 0) {
-            exec("diff $output_name $output_int", $out_diff, $ret_diff);
-            $run_test_path = str_replace('/^.*\/$/', " ", $run_test);
-            if ($ret_diff == 0) {
-                if (!$int_only_flag) {
-                    echo "<p><font color=\"green\"><b>SUCC</b></font> Parse test <i>$run_test_path</i> ended with return code:<font color=\"green\"><b> $return_parser </b></font></p>";
-                }
-                echo "<p><font color=\"green\"><b>SUCC</b></font> Interpret <i>test $run_test_path</i> ended with return code:<font color=\"green\"><b> $return_interpret </b></font></p>";
-                $succTestsCounter++;
-            } else {
-                if (!$int_only_flag) {
-                    echo "<p><font color=\"green\"><b>SUCC</b></font> Parse test <i>$run_test_path</i> ended with return code:<font color=\"green\"><b> $return_parser </b></font></p>";
-                }
-                echo "<p><font color=\"red\"><b>FAIL</b></font> Interpret test <i>$run_test_path</i> ended with <font color=\"red\"><b>diff error </b></font></p>";
-                $failTestsCounter++;
-            }
-        } else {
-            $run_test_path = str_replace('/^.*\/$/', " ", $run_test);
-            if ($return_interpret == $ret_code) {
-                if (!$int_only_flag) {
-                    echo "<p><font color=\"green\"><b>SUCC</b></font> Parse test <i>$run_test_path</i> ended with return code:<font color=\"green\"><b> $return_parser </b></font></p>";
-                }
-                echo "<p><font color=\"green\"><b>SUCC</b></font> Interpret test <i>$run_test_path</i> ended with return code:<font color=\"green\"><b> $return_interpret </b></font></p>";
-                $succTestsCounter++;
-            } else {
-                if (!$int_only_flag) {
-                    echo "<p><font color=\"green\"><b>SUCC</b></font> Parse test <i>$run_test_path</i> ended with return code:<font color=\"green\"><b> $return_parser </b></font></p>";
-                }
-                echo "<p><font color=\"red\"><b>FAIL</b></font> Interpret test <i>$run_test_path</i> ended with return code:<font color=\"red\"><b> $return_interpret </b></font>(Expected code: $ret_code)</p>";
-                $failTestsCounter++;
-            }
-        }
-        */
     }
     fclose($TemporaryParser);
     fclose($TemporaryInterpret);
@@ -316,7 +281,7 @@ if ($src != NULL) {
     $percent = (($succTestsCounter / count($src)) * 100);
     $testsCounter = count($src);
     generateSummaryOfTests($testsCounter, $failTestsCounter, $succTestsCounter, $percent);
-    //TODO - nemá tu byť exit(0) ?
+    exit(0);
 } else {
     $testsCounter = 0;
     $failTestsCounter = 0;
