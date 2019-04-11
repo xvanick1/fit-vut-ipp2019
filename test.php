@@ -249,14 +249,14 @@ foreach ($src as $run_test) {
         $output_name = substr($run_test, 0, -3) . "out";
         $output_int = stream_get_meta_data($TemporaryInterpret)["uri"];
         if ($int_only_flag == true) {
-            exec("python3.6 $defaultInterpretFile --source=" . $run_test . " < $input_name 2>/dev/null ", $output_interpret, $return_interpret);
+            exec("python3.6 $defaultInterpretFile --source=" . $run_test . " < $input_name > $output_int 2>/dev/null ", $output_interpret, $return_interpret);
         } else {
-            exec("python3.6 $defaultInterpretFile --source=" . stream_get_meta_data($TemporaryParser)["uri"] . " < $input_name 2>/dev/null ", $output_interpret, $return_interpret);
+            exec("python3.6 $defaultInterpretFile --source=" . stream_get_meta_data($TemporaryParser)["uri"] . " < $input_name > $output_int 2>/dev/null ", $output_interpret, $return_interpret);
         }
 
         $run_test_path = str_replace('/^.*\/$/', " ", $run_test);
         if ($return_interpret == $ret_code && $return_interpret == 0) { // diff output
-            exec("diff $output_name $output_int", $out_diff, $ret_diff);
+            exec("diff $output_name $output_int 2>/dev/null", $out_diff, $ret_diff);
             if ($ret_diff == 0) {
                 echo "<p><font color=\"green\"><b>SUCC</b></font> Interpret <i>test $run_test_path</i> ended with return code:<font color=\"green\"><b> $return_interpret </b></font></p>";
                 $succTestsCounter++;
