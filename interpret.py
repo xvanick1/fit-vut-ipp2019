@@ -11,6 +11,7 @@ import xml.etree.ElementTree as XMLElemTree
 import re
 import copy
 
+## Pole inštrukcií jazyka IPPcode19
 instructionList = ["MOVE", "CREATEFRAME", "PUSHFRAME", "POPFRAME", "DEFVAR", "CALL", "RETURN", "PUSHS", "POPS", "ADD",
                    "SUB", "MUL", "IDIV", "LT", "GT", "EQ", "AND", "OR", "NOT", "INT2CHAR", "STRI2INT", "READ", "WRITE",
                    "CONCAT", "STRLEN", "GETCHAR", "SETCHAR", "TYPE", "LABEL", "JUMP", "JUMPIFEQ", "JUMPIFNEQ", "EXIT",
@@ -29,61 +30,61 @@ class Regex:
     nil = r"nil"
     order = r"^[0-9]+$"
 
-
+##TODO: replaceEscapeSequence
 def replaceEscapeSequence(match):
     number = int(match.group(1))
     return chr(number)
 
-
+## Kontrola typu argumentu inštrukcie
 def checkvar(argtype, value):
     if argtype != 'var':
         err_xml_structure("Error: Argument type is not var!")
     if not re.match(Regex.var, value):
         err_xml_structure("Error: Argument var lexical error!")
 
-
+## Kontrola typu argumentu inštrukcie
 def checkint(argtype, value):
     if argtype != 'int':
         err_xml_structure("Error: Argument type is not int!")
     if not re.match(Regex.integer, value):
         err_xml_structure("Error: Argument int lexical error!")
 
-
+## Kontrola typu argumentu inštrukcie
 def checkbool(argtype, value):
     if argtype != 'bool':
         err_xml_structure("Error: Argument type is not bool!")
     if not re.match(Regex.boolean, value):
         err_xml_structure("Error: Argument bool lexical error!")
 
-
+## Kontrola typu argumentu inštrukcie
 def checklabel(argtype, value):
     if argtype != 'label':
         err_xml_structure("Error: Argument type is not label!")
     if not re.match(Regex.label, value):
         err_xml_structure("Error: Argument label lexical error!")
 
-
+## Kontrola typu argumentu inštrukcie
 def checkstring(argtype, value):
     if argtype != 'string':
         err_xml_structure("Error: Argument type is not symb!")
     if not re.match(Regex.string, value):
         err_xml_structure("Error: Argument symb lexical error!")
 
-
+## Kontrola typu argumentu inštrukcie
 def checknil(argtype, value):
     if argtype != 'nil':
         err_xml_structure("Error: Argument type is not nil!")
     if not re.match(Regex.nil, value):
         err_xml_structure("Error: Argument nil lexical error!")
 
-
+## Kontrola typu argumentu inštrukcie
 def checktype(argtype, value):
     if argtype != 'type':
         err_xml_structure("Error: Argument type is not type!")
     if not re.match(Regex.type, value):
         err_xml_structure("Error: Argument type lexical error!")
 
-
+## Kontrola typu argumentu inštrukcie
 def checksymb(argtype, value):
     if argtype == 'var':
         checkvar(argtype, value)
@@ -98,21 +99,21 @@ def checksymb(argtype, value):
     else:
         err_xml_structure("Error: Argument type lexical error: expected symb!")
 
-
+## Kontrola neprázdnosti argumentu inštrukcie
 def checkempty(argtype, value):
     if argtype is not None:
         err_xml_structure("Error: Instruction has too many arguments")
     if value is not None:
         err_xml_structure("Error: Instruction has too many arguments")
 
-
+## Vráti hodnotu argumentu
 def parse_argument_value(argtype, value):
     if argtype == 'string' and value is None:
         return ""
     else:
         return value
 
-
+## Pomocné metody jednotlivých chybových kodov
 def err_script_argument(text):
     print(text, file=sys.stderr)
     exit(10)
@@ -179,16 +180,17 @@ class Instruction:
     arg2value: str = None
     arg3value: str = None
 
-
+## Trieda premennej argumentu
 class Variable:
     name: str
     type = None
     value = None
 
-
+## Trieda rámca
 class Frame:
     arrayOfVariables = []
 
+    ### Zadefinovanie premennej
     def def_var(self, name):
 
         for variable in self.arrayOfVariables:
@@ -201,6 +203,7 @@ class Frame:
         variable.type = None
         self.arrayOfVariables.append(variable)
 
+    ### Nastavenie hodnoty premennej
     def set_var_value(self, name, type, value):
         tempvar = None
 
@@ -214,6 +217,7 @@ class Frame:
         tempvar.type = type
         tempvar.value = value
 
+    ### Získanie hodnoty premennej
     def get_var_value(self, name):
         for variable in self.arrayOfVariables:
             if variable.name == name:
@@ -287,6 +291,7 @@ class Interpret:
         except:
             err_well_formated_xml()
 
+    ### Parsovanie inštrukcií z XML reprezentácie
     def parse_instructions(self):
         instructionOrderList = []
         xmlProgramAttribs = ['language', 'name', 'description']
@@ -316,9 +321,11 @@ class Interpret:
             instructionOrderList.append(instruction.order)
             self.identify_instruction(instruction)
 
+    ### Získanie hodnoty orderu inštrukcie
     def sort_order(self, instruction):
         return instruction.order
 
+    ### Parsovanie argumentov inštrukcie z XML
     def parse_instruction_arguments(self, instruction, arguments):
         for argument in arguments:
             if argument.tag == 'arg1':
@@ -339,6 +346,7 @@ class Interpret:
             else:
                 err_xml_structure("Error: invalid xml instruction argument - arg4+")
 
+    ### Syntaktická a sémantická analýza inštrukcie
     def identify_instruction(self, instruction):
         if instruction.opcode == 'MOVE' or instruction.opcode == 'INT2CHAR' or instruction.opcode == 'STRLEN' or instruction.opcode == 'TYPE' or instruction.opcode == 'NOT':
             checkvar(instruction.arg1type, instruction.arg1value)
@@ -373,6 +381,7 @@ class Interpret:
             checksymb(instruction.arg2type, instruction.arg2value)
             checksymb(instruction.arg3type, instruction.arg3value)
 
+    ### Kontrola duplicitného symbolu
     def check_same_symb(self, symb1value, symb2value):
         if symb1value is None and symb2value is not None:
             err_bad_operand()
@@ -381,6 +390,7 @@ class Interpret:
         if type(symb1value) is not type(symb2value):
             err_bad_operand()
 
+    ### Kontrola duplicitného integeru
     def check_same_int(self, symb1value, symb2value):
         if symb1value is None:
             err_bad_operand()
@@ -391,6 +401,7 @@ class Interpret:
         if type(symb1value) is not int or type(symb2value) is not int:
             err_bad_operand()
 
+    ### Kontrola duplicitného reťazca
     def check_same_str(self, symb1value, symb2value):
         if symb1value is None:
             err_bad_operand()
@@ -401,6 +412,7 @@ class Interpret:
         if type(symb1value) is not str or type(symb2value) is not str:
             err_bad_operand()
 
+    ### Kontrola duplicitného boolu
     def check_same_bool(self, symb1value, symb2value):
         if symb1value is None:
             err_bad_operand()
@@ -411,6 +423,7 @@ class Interpret:
         if type(symb1value) is not bool or type(symb2value) is not bool:
             err_bad_operand()
 
+    ### Identifikácia typu symbolu
     def get_symb_value(self, symbtype, symbvalue):
         if symbtype == 'var':
             localvar = symbvalue[3:]
@@ -449,6 +462,7 @@ class Interpret:
         elif symbtype == 'nil':
             return None
 
+    ### Nastavenie hodnoty premennej
     def set_var(self, varname, symbvalue):
         symbtype = type(symbvalue)
         localvar = varname[3:]
@@ -468,6 +482,7 @@ class Interpret:
             else:
                 self.tempframe.set_var_value(name=localvar, type=symbtype, value=symbvalue)
 
+    ### Interpretácia labelu
     def interpret_labels(self):
         for instruction in self.instructions:
             if instruction.opcode == 'LABEL':
@@ -475,6 +490,7 @@ class Interpret:
                 self.labels[instruction.arg1value] = self.pc_counter
             self.pc_counter += 1
 
+    ### Interpretácia inštrukcie - Lexikálna analýza inštrukcie (detaily k nahliadnutiu v dokumentácii: ipp19spec.pdf str:11-14)
     def interpret_instruction(self, instruction):
         if instruction.opcode == 'MOVE':
             symbvalue = self.get_symb_value(instruction.arg2type, instruction.arg2value)
