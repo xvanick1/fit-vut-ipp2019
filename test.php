@@ -7,7 +7,7 @@
  * Author's comment: Tento skript je upravenou kópiou kódu, ktorý som napísal pred rokom k projektu z predmetu IPP 2017/2018 k jazyku IPPcode18.
  **/
 
-$arrayOfArguments = array("recursive", "directory::", "parse-script::", "int-script::", "parse-only", "int-only"); //Pole povolených argumentov skriptu
+$arrayOfArguments = array("recursive", "directory::", "parse-script::", "int-script::", "parse-only", "int-only"); //Pole povolených argumentov skriptu mimo argument help
 $dir = getcwd();
 $defaultParserFile = "parse.php";
 $defaultInterpretFile = "interpret.py";
