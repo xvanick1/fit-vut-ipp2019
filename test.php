@@ -7,7 +7,7 @@
  * Author's comment: Tento skript je upravenou kópiou kódu, ktorý som napísal pred rokom k projektu z predmetu IPP 2017/2018 k jazyku IPPcode18.
  **/
 
-$arrayOfArguments = array("recursive", "directory::", "parse-script::", "int-script::", "parse-only", "int-only"); //Array of allowed arguments
+$arrayOfArguments = array("recursive", "directory::", "parse-script::", "int-script::", "parse-only", "int-only"); //Pole povolených argumentov skriptu
 $dir = getcwd();
 $defaultParserFile = "parse.php";
 $defaultInterpretFile = "interpret.py";
@@ -15,7 +15,7 @@ $src = array();
 $argument = getopt(NULL, $arrayOfArguments);
 $countOfParsedArguments = 1;
 
-/* Auxiliary flags */
+/* Pomocné flagy */
 $rec_flag = false;
 $dir_flag = false;
 $parse_flag = false;
@@ -23,7 +23,7 @@ $in_flag = false;
 $parse_only_flag = false;
 $int_only_flag = false;
 
-/* --- Function called, when argument help is used by user --- */
+/* --- Vypíše nápovedu k skriptu v prípade zadaného argumentu help skriptu --- */
 function help()
 {
     $help = "Script \"test.php\" written in PHP 7.3" . PHP_EOL . PHP_EOL;
@@ -42,21 +42,21 @@ function help()
     echo $help . PHP_EOL;
 }
 
-/* --- Checks existence of directory or file --- */
+/* --- Kontrola existencie priečinku alebo súboru --- */
 function existenceErr($existenceArgument)
 {
     fprintf(STDERR, "Error: $existenceArgument doesn't exist or insufficient permissions to $existenceArgument\n");
     exit(11);
 }
 
-/* --- Checks the path to directory or file --- */
+/* --- Kontrola cesty k priečinku alebo súboru --- */
 function pathErr($existenceArgument)
 {
     fprintf(STDERR, "Error: $existenceArgument path wasn't entered correctly!\n");
     exit(10);
 }
 
-/* --- Prints header of html file --- */
+/* --- Vypíše html hlavičku --- */
 function generateHeader()
 {
     $header = "<!DOCTYPE html>" . PHP_EOL;
@@ -75,7 +75,7 @@ function generateHeader()
     echo $header . PHP_EOL;
 }
 
-/* --- Prints summary of all tests to STDOUT --- */
+/* --- Vypíše súhrn testov na štandardný výstup --- */
 function generateSummaryOfTests($testsCount, $failTestsCount, $succTestsCount, $procentual)
 {
 
@@ -89,7 +89,7 @@ function generateSummaryOfTests($testsCount, $failTestsCount, $succTestsCount, $
 }
 
 
-/* --- Kontrola vstupných argumentov a nastavenie ich flagov --- */
+/* --- Kontrola vstupných argumentov --- */
 
 if ($argc > 5) { //Kontrola počtu vstupných argumentov
     fprintf(STDERR, "Error: Too many arguments!\n");
@@ -98,7 +98,7 @@ if ($argc > 5) { //Kontrola počtu vstupných argumentov
     help();
     exit(0);
 } else {
-    //Identifikácia ďalších argumentov na vstupe
+    /* --- Identifikácia ďalších povolených argumentov na vstupe --- */
     if (array_key_exists("recursive", $argument)) {
         $rec_flag = true;
         $countOfParsedArguments++;
@@ -151,18 +151,20 @@ if ($argc > 5) { //Kontrola počtu vstupných argumentov
         }
     }
 
-    if (($argument == false && $argc > 1) || $countOfParsedArguments != $argc) { //Zadaný neznámy argument TODO: && tam nepasuje, berie aktualne všetky možné argumenty skriptu, neskočí do ifu
+    /* --- V prípade neznámeho argumentu, alebo nepovolenej kombinácie argumentov skončí s chybou --- */
+    if (($argument == false && $argc > 1) || $countOfParsedArguments != $argc) {
         fprintf(STDERR, "Error: Unknown argument used!\n");
         exit(10);
     } elseif ((array_key_exists("parse-only", $argument) && array_key_exists("int-only", $argument)) || (array_key_exists("parse-only", $argument) && ($in_flag == true)) || (array_key_exists("int-only", $argument) && ($parse_flag == true))) { //Zadaná nepovolená kombinácia argumentov
-        fprintf(STDERR, "Error: Unauthorized combination arguments\n");
+        fprintf(STDERR, "Error: Unauthorized combination of arguments\n");
         exit(10);
     }
 
 }
 
-generateHeader();
+generateHeader(); //Volanie funkcie na generovanie html hlavičky
 
+/* --- Vyhľadá všetky súbory s testami v zadanom priečinku --- */
 if ($rec_flag == false) {
     foreach (new DirectoryIterator($dir) as $fileInfo) {
         if ($fileInfo->isDot()) {
@@ -172,7 +174,7 @@ if ($rec_flag == false) {
             $src[] = $fileInfo->getPathname();
         }
     }
-} else {
+} else { //Vyhľadá všetky súbory s testami v zadanom priečinku a rekurzívne aj v podpriečinkoch
     $objects = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir));
     foreach ($objects as $fileInfo) {
         if ($fileInfo->getExtension() == "src") {
@@ -184,6 +186,7 @@ if ($rec_flag == false) {
 $succTestsCounter = 0;
 $failTestsCounter = 0;
 
+/* --- Načítanie jednotlivých testovacích súborov --- */
 foreach ($src as $run_test) {
     if (!($TemporaryParser = tmpfile()) || !($TemporaryInterpret = tmpfile())) {
         fprintf(STDERR, "Internal Error: Failed to create temporary file.\n");
@@ -191,6 +194,7 @@ foreach ($src as $run_test) {
     }
 
     $existenceArgument = "File";
+    /* --- Pokiaľ jeden zo súborov typu in, rc alebo out neexistuje, bude vytvorený. V prípade neúspešného vytvorenia súboru, alebo nedostatočných oprávnení k vytvoreniu či otvoreniu súboru sa skript ukončí s chybou. --- */
     if (!($in = fopen(substr($run_test, 0, -3) . "in", "c+")) || !($rc = fopen(substr($run_test, 0, -3) . "rc", "c+"))) {
         existenceErr($existenceArgument);
     } elseif (!($out = fopen(substr($run_test, 0, -3) . "out", "c+"))) {
@@ -198,16 +202,19 @@ foreach ($src as $run_test) {
         exit(12);
     }
 
+    /* --- Nastavenie návratového kódu testu --- */
     if (filesize(substr($run_test, 0, -3) . "rc") == 0) {
         fwrite($rc, "0\n");
         $ret_code = 0;
     } else {
         $ret_code = intval(fread($rc, filesize(substr($run_test, 0, -3) . "rc")));
     }
+    /* --- Uzatvorenie testovacích súborov --- */
     fclose($in);
     fclose($rc);
     fclose($out);
 
+    /* --- Spustenie skriptov pre jednotlivé testovacie súbory a vypísanie html reprezentácie výsledku testu pre skript parser --- */
     if ($int_only_flag == false) {
         exec("php7.3 $defaultParserFile < $run_test > " . stream_get_meta_data($TemporaryParser)["uri"] . " 2>/dev/null ", $output_parser, $return_parser);
 
@@ -241,6 +248,7 @@ foreach ($src as $run_test) {
         }
     }
 
+    /* --- Spustenie skriptov pre jednotlivé testovacie súbory a vypísanie html reprezentácie výsledku testu pre skript interpret --- */
     if ($int_only_flag) {
         $return_parser = 0;
     }
@@ -276,7 +284,7 @@ foreach ($src as $run_test) {
     fclose($TemporaryInterpret);
 }
 
-
+/* --- Výpočet hodnot pre súhrn testov --- */
 if ($src != NULL) {
     $percent = (($succTestsCounter / count($src)) * 100);
     $testsCounter = count($src);
