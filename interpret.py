@@ -30,10 +30,12 @@ class Regex:
     nil = r"nil"
     order = r"^[0-9]+$"
 
-##TODO: replaceEscapeSequence
+
+##Nahradi escape sekvenciu za tisknutelný znak
 def replaceEscapeSequence(match):
     number = int(match.group(1))
     return chr(number)
+
 
 ## Kontrola typu argumentu inštrukcie
 def checkvar(argtype, value):
@@ -42,12 +44,14 @@ def checkvar(argtype, value):
     if not re.match(Regex.var, value):
         err_xml_structure("Error: Argument var lexical error!")
 
+
 ## Kontrola typu argumentu inštrukcie
 def checkint(argtype, value):
     if argtype != 'int':
         err_xml_structure("Error: Argument type is not int!")
     if not re.match(Regex.integer, value):
         err_xml_structure("Error: Argument int lexical error!")
+
 
 ## Kontrola typu argumentu inštrukcie
 def checkbool(argtype, value):
@@ -56,12 +60,14 @@ def checkbool(argtype, value):
     if not re.match(Regex.boolean, value):
         err_xml_structure("Error: Argument bool lexical error!")
 
+
 ## Kontrola typu argumentu inštrukcie
 def checklabel(argtype, value):
     if argtype != 'label':
         err_xml_structure("Error: Argument type is not label!")
     if not re.match(Regex.label, value):
         err_xml_structure("Error: Argument label lexical error!")
+
 
 ## Kontrola typu argumentu inštrukcie
 def checkstring(argtype, value):
@@ -70,6 +76,7 @@ def checkstring(argtype, value):
     if not re.match(Regex.string, value):
         err_xml_structure("Error: Argument symb lexical error!")
 
+
 ## Kontrola typu argumentu inštrukcie
 def checknil(argtype, value):
     if argtype != 'nil':
@@ -77,12 +84,14 @@ def checknil(argtype, value):
     if not re.match(Regex.nil, value):
         err_xml_structure("Error: Argument nil lexical error!")
 
+
 ## Kontrola typu argumentu inštrukcie
 def checktype(argtype, value):
     if argtype != 'type':
         err_xml_structure("Error: Argument type is not type!")
     if not re.match(Regex.type, value):
         err_xml_structure("Error: Argument type lexical error!")
+
 
 ## Kontrola typu argumentu inštrukcie
 def checksymb(argtype, value):
@@ -99,6 +108,7 @@ def checksymb(argtype, value):
     else:
         err_xml_structure("Error: Argument type lexical error: expected symb!")
 
+
 ## Kontrola neprázdnosti argumentu inštrukcie
 def checkempty(argtype, value):
     if argtype is not None:
@@ -106,12 +116,14 @@ def checkempty(argtype, value):
     if value is not None:
         err_xml_structure("Error: Instruction has too many arguments")
 
+
 ## Vráti hodnotu argumentu
 def parse_argument_value(argtype, value):
     if argtype == 'string' and value is None:
         return ""
     else:
         return value
+
 
 ## Pomocné metody jednotlivých chybových kodov
 def err_script_argument(text):
@@ -169,7 +181,7 @@ def err_string():
     exit(58)
 
 
-## Inštrukcia kódu IPPcode19
+## Trieda inštrukcie kódu IPPcode19
 class Instruction:
     order: int = 0
     opcode: str = None
@@ -180,11 +192,13 @@ class Instruction:
     arg2value: str = None
     arg3value: str = None
 
+
 ## Trieda premennej argumentu
 class Variable:
     name: str
     type = None
     value = None
+
 
 ## Trieda rámca
 class Frame:
@@ -228,13 +242,18 @@ class Frame:
 ## Interprét
 class Interpret:
     def __init__(self):
+        ## Spracovanie vstupných argumentov
         self.sourceFile = sys.stdin
         self.inputFile = sys.stdin
         self.parse_arguments()
+
+        ## Načítanie inštrukcií z XML reprezentácie
         self.xml_read()
         self.instructions = []
         self.parse_instructions()
         self.instructions.sort(key=self.sort_order)
+
+        ## Inicializacie struktur
         self.frameStack = []
         self.tempframe = None
         self.localframe = None
@@ -244,8 +263,8 @@ class Interpret:
         self.pc_stack = []
         self.labels = {}
 
+        ## Interpretacie inštrukcií
         self.interpret_labels()
-
         self.pc_counter = 0
         while self.pc_counter < len(self.instructions):
             self.interpret_instruction(self.instructions[self.pc_counter])
@@ -346,7 +365,7 @@ class Interpret:
             else:
                 err_xml_structure("Error: invalid xml instruction argument - arg4+")
 
-    ### Syntaktická a sémantická analýza inštrukcie
+    ### Syntaktická a lexikálná analýza inštrukcie
     def identify_instruction(self, instruction):
         if instruction.opcode == 'MOVE' or instruction.opcode == 'INT2CHAR' or instruction.opcode == 'STRLEN' or instruction.opcode == 'TYPE' or instruction.opcode == 'NOT':
             checkvar(instruction.arg1type, instruction.arg1value)
@@ -381,7 +400,7 @@ class Interpret:
             checksymb(instruction.arg2type, instruction.arg2value)
             checksymb(instruction.arg3type, instruction.arg3value)
 
-    ### Kontrola duplicitného symbolu
+    ### Sémantická kontrola symbolu
     def check_same_symb(self, symb1value, symb2value):
         if symb1value is None and symb2value is not None:
             err_bad_operand()
@@ -390,7 +409,7 @@ class Interpret:
         if type(symb1value) is not type(symb2value):
             err_bad_operand()
 
-    ### Kontrola duplicitného integeru
+    ### Sémantická kontrola integeru
     def check_same_int(self, symb1value, symb2value):
         if symb1value is None:
             err_bad_operand()
@@ -401,7 +420,7 @@ class Interpret:
         if type(symb1value) is not int or type(symb2value) is not int:
             err_bad_operand()
 
-    ### Kontrola duplicitného reťazca
+    ### Sémantická kontrola reťazca
     def check_same_str(self, symb1value, symb2value):
         if symb1value is None:
             err_bad_operand()
@@ -412,7 +431,7 @@ class Interpret:
         if type(symb1value) is not str or type(symb2value) is not str:
             err_bad_operand()
 
-    ### Kontrola duplicitného boolu
+    ### Sémantická kontrola boolu
     def check_same_bool(self, symb1value, symb2value):
         if symb1value is None:
             err_bad_operand()
@@ -423,7 +442,7 @@ class Interpret:
         if type(symb1value) is not bool or type(symb2value) is not bool:
             err_bad_operand()
 
-    ### Identifikácia typu symbolu
+    ### Identifikácia typu symbolu a získanie hodnoty
     def get_symb_value(self, symbtype, symbvalue):
         if symbtype == 'var':
             localvar = symbvalue[3:]
@@ -486,11 +505,13 @@ class Interpret:
     def interpret_labels(self):
         for instruction in self.instructions:
             if instruction.opcode == 'LABEL':
+                if instruction.arg1value in self.labels:
+                    err_semantic()
                 self.labels.setdefault(instruction.arg1value)
                 self.labels[instruction.arg1value] = self.pc_counter
             self.pc_counter += 1
 
-    ### Interpretácia inštrukcie - Lexikálna analýza inštrukcie (detaily k nahliadnutiu v dokumentácii: ipp19spec.pdf str:11-14)
+    ### Interpretácia inštrukcie - Sémantická analýza inštrukcie (detaily k nahliadnutiu v dokumentácii: ipp19spec.pdf str:11-14)
     def interpret_instruction(self, instruction):
         if instruction.opcode == 'MOVE':
             symbvalue = self.get_symb_value(instruction.arg2type, instruction.arg2value)
@@ -731,14 +752,20 @@ class Interpret:
                 err_missing_value()
             self.pc_counter = self.pc_stack.pop()
         elif instruction.opcode == 'JUMP':
+            if instruction.arg1value not in self.labels:
+                err_semantic()
             self.pc_counter = self.labels[instruction.arg1value]
         elif instruction.opcode == 'JUMPIFEQ':
+            if instruction.arg1value not in self.labels:
+                err_semantic()
             symb1value = self.get_symb_value(instruction.arg2type, instruction.arg2value)
             symb2value = self.get_symb_value(instruction.arg3type, instruction.arg3value)
             self.check_same_symb(symb1value, symb2value)
             if symb1value == symb2value:
                 self.pc_counter = self.labels[instruction.arg1value]
         elif instruction.opcode == 'JUMPIFNEQ':
+            if instruction.arg1value not in self.labels:
+                err_semantic()
             symb1value = self.get_symb_value(instruction.arg2type, instruction.arg2value)
             symb2value = self.get_symb_value(instruction.arg3type, instruction.arg3value)
             self.check_same_symb(symb1value, symb2value)
