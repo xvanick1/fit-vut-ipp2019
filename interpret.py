@@ -9,6 +9,7 @@ import sys
 import argparse
 import xml.etree.ElementTree as XMLElemTree
 import re
+import copy
 
 instructionList = ["MOVE", "CREATEFRAME", "PUSHFRAME", "POPFRAME", "DEFVAR", "CALL", "RETURN", "PUSHS", "POPS", "ADD",
                    "SUB", "MUL", "IDIV", "LT", "GT", "EQ", "AND", "OR", "NOT", "INT2CHAR", "STRI2INT", "READ", "WRITE",
@@ -27,6 +28,7 @@ class Regex:
     type = r"int|string|bool"
     nil = r"nil"
     order = r"^[0-9]+$"
+
 
 def replaceEscapeSequence(match):
     number = int(match.group(1))
@@ -180,8 +182,8 @@ class Instruction:
 
 class Variable:
     name: str
-    type: None
-    value: None
+    type = None
+    value = None
 
 
 class Frame:
@@ -195,6 +197,8 @@ class Frame:
 
         variable = Variable()
         variable.name = name
+        variable.type = None
+        variable.type = None
         self.arrayOfVariables.append(variable)
 
     def set_var_value(self, name, type, value):
@@ -226,13 +230,22 @@ class Interpret:
         self.xml_read()
         self.instructions = []
         self.parse_instructions()
+        self.instructions.sort(key=self.sort_order)
         self.frameStack = []
-        self.tempframe: Frame
-        self.localframe: Frame
+        self.tempframe = None
+        self.localframe = None
         self.globalframe: Frame = Frame()
         self.stack = []
-        for instruction in self.instructions:
-            self.interpret_instruction(instruction)
+        self.pc_counter = 0
+        self.pc_stack = []
+        self.labels = {}
+
+        self.interpret_labels()
+
+        self.pc_counter = 0
+        while self.pc_counter < len(self.instructions):
+            self.interpret_instruction(self.instructions[self.pc_counter])
+            self.pc_counter += 1
 
     ### Spracovanie vstupných argumentov
     def parse_arguments(self):
@@ -285,7 +298,7 @@ class Interpret:
         for elem in self.root:
             instruction = Instruction()
             if elem.tag != 'instruction':
-                err_xml_structure("Error: Iot instruction element - found: " + elem.tag)
+                err_xml_structure("Error: Not instruction element - found: " + elem.tag)
             if elem.get('order') is None:
                 err_xml_structure("Error: Order not defined")
             if re.match(Regex.order, elem.get('order')) is None:
@@ -298,20 +311,29 @@ class Interpret:
             if int(elem.get('order')) in instructionOrderList:
                 err_xml_structure("Error: Duplicate order")
             instruction.order = int(elem.get('order'))
-            self.instructions.insert(instruction.order, instruction)
+            self.instructions.append(instruction)
             self.parse_instruction_arguments(instruction, elem)
             instructionOrderList.append(instruction.order)
             self.identify_instruction(instruction)
 
+    def sort_order(self, instruction):
+        return instruction.order
+
     def parse_instruction_arguments(self, instruction, arguments):
         for argument in arguments:
             if argument.tag == 'arg1':
+                if instruction.arg1type is not None or argument.get('type') is None:
+                    err_xml_structure("Error: arg1 error")
                 instruction.arg1type = argument.get('type')
                 instruction.arg1value = parse_argument_value(instruction.arg1type, argument.text)
             elif argument.tag == 'arg2':
+                if instruction.arg2type is not None or argument.get('type') is None:
+                    err_xml_structure("Error: arg2 error")
                 instruction.arg2type = argument.get('type')
                 instruction.arg2value = parse_argument_value(instruction.arg2type, argument.text)
             elif argument.tag == 'arg3':
+                if instruction.arg3type is not None or argument.get('type') is None:
+                    err_xml_structure("Error: arg3 error")
                 instruction.arg3type = argument.get('type')
                 instruction.arg3value = parse_argument_value(instruction.arg3type, argument.text)
             else:
@@ -351,6 +373,44 @@ class Interpret:
             checksymb(instruction.arg2type, instruction.arg2value)
             checksymb(instruction.arg3type, instruction.arg3value)
 
+    def check_same_symb(self, symb1value, symb2value):
+        if symb1value is None and symb2value is not None:
+            err_bad_operand()
+        if symb1value is not None and symb2value is None:
+            err_bad_operand()
+        if type(symb1value) is not type(symb2value):
+            err_bad_operand()
+
+    def check_same_int(self, symb1value, symb2value):
+        if symb1value is None:
+            err_bad_operand()
+        if symb2value is None:
+            err_bad_operand()
+        if type(symb1value) is not type(symb2value):
+            err_bad_operand()
+        if type(symb1value) is not int or type(symb2value) is not int:
+            err_bad_operand()
+
+    def check_same_str(self, symb1value, symb2value):
+        if symb1value is None:
+            err_bad_operand()
+        if symb2value is None:
+            err_bad_operand()
+        if type(symb1value) is not type(symb2value):
+            err_bad_operand()
+        if type(symb1value) is not str or type(symb2value) is not str:
+            err_bad_operand()
+
+    def check_same_bool(self, symb1value, symb2value):
+        if symb1value is None:
+            err_bad_operand()
+        if symb2value is None:
+            err_bad_operand()
+        if type(symb1value) is not type(symb2value):
+            err_bad_operand()
+        if type(symb1value) is not bool or type(symb2value) is not bool:
+            err_bad_operand()
+
     def get_symb_value(self, symbtype, symbvalue):
         if symbtype == 'var':
             localvar = symbvalue[3:]
@@ -389,33 +449,44 @@ class Interpret:
         elif symbtype == 'nil':
             return None
 
+    def set_var(self, varname, symbvalue):
+        symbtype = type(symbvalue)
+        localvar = varname[3:]
+        if varname[0] == 'L':
+            if self.localframe is None:
+                err_frame_existance()
+            else:
+                self.localframe.set_var_value(name=localvar, type=symbtype, value=symbvalue)
+        elif varname[0] == 'G':
+            if self.globalframe is None:
+                err_frame_existance()
+            else:
+                self.globalframe.set_var_value(name=localvar, type=symbtype, value=symbvalue)
+        elif varname[0] == 'T':
+            if self.tempframe is None:
+                err_frame_existance()
+            else:
+                self.tempframe.set_var_value(name=localvar, type=symbtype, value=symbvalue)
+
+    def interpret_labels(self):
+        for instruction in self.instructions:
+            if instruction.opcode == 'LABEL':
+                self.labels.setdefault(instruction.arg1value)
+                self.labels[instruction.arg1value] = self.pc_counter
+            self.pc_counter += 1
+
     def interpret_instruction(self, instruction):
         if instruction.opcode == 'MOVE':
             symbvalue = self.get_symb_value(instruction.arg2type, instruction.arg2value)
-            symbtype = type(symbvalue)
-            localvar = instruction.arg1value[3:]
-            if instruction.arg1value[0] == 'L':
-                if self.localframe is None:
-                    err_frame_existance()
-                else:
-                    self.localframe.set_var_value(name=localvar, type=symbtype, value=symbvalue)
-            elif instruction.arg1value[0] == 'G':
-                if self.globalframe is None:
-                    err_frame_existance()
-                else:
-                    self.globalframe.set_var_value(name=localvar, type=symbtype, value=symbvalue)
-            elif instruction.arg1value[0] == 'T':
-                if self.tempframe is None:
-                    err_frame_existance()
-                else:
-                    self.tempframe.set_var_value(name=localvar, type=symbtype, value=symbvalue)
+            self.set_var(instruction.arg1value, symbvalue)
         elif instruction.opcode == 'CREATEFRAME':
             self.tempframe = Frame()
+            self.tempframe.arrayOfVariables = []
         elif instruction.opcode == 'PUSHFRAME':
             if self.tempframe is None:
                 err_frame_existance()
             if self.localframe is not None:
-                self.frameStack.append(self.tempframe)
+                self.frameStack.append(self.localframe)
             self.localframe = self.tempframe
             self.tempframe = None
         elif instruction.opcode == 'POPFRAME':
@@ -423,7 +494,8 @@ class Interpret:
                 err_frame_existance()
             else:
                 self.tempframe = self.localframe
-            if self.frameStack.count() > 0:
+                self.localframe = None
+            if len(self.frameStack) > 0:
                 self.localframe = self.frameStack.pop()
         elif instruction.opcode == 'DEFVAR':
             localvar = instruction.arg1value[3:]
@@ -447,7 +519,9 @@ class Interpret:
             print(symbvalue, file=sys.stderr)
         elif instruction.opcode == 'WRITE':
             symbvalue = self.get_symb_value(instruction.arg1type, instruction.arg1value)
-            if not isinstance(symbvalue, bool):
+            if symbvalue is None:
+                print('', end='')
+            elif type(symbvalue) is not bool:
                 print(symbvalue, end='')
             else:
                 if symbvalue == True:
@@ -455,8 +529,32 @@ class Interpret:
                 else:
                     print('false', end='')
         elif instruction.opcode == 'TYPE':
-            symbvalue = type(self.get_symb_value(instruction.arg2type, instruction.arg2value))
-            if symbvalue is None:
+            if instruction.arg1type != 'var':
+                val = self.get_symb_value(instruction.arg2type, instruction.arg2value)
+            else:
+                localvar = instruction.arg2value[3:]
+                if instruction.arg2value[0] == 'L':
+                    if self.localframe is None:
+                        err_frame_existance()
+                    else:
+                        val = self.localframe.get_var_value(localvar)
+                elif instruction.arg2value[0] == 'G':
+                    if self.globalframe is None:
+                        err_frame_existance()
+                    else:
+                        val = self.globalframe.get_var_value(localvar)
+                elif instruction.arg2value[0] == 'T':
+                    if self.tempframe is None:
+                        err_frame_existance()
+                    else:
+                        val = self.tempframe.get_var_value(localvar)
+                if val.value is None and val.type is None:
+                    self.set_var(instruction.arg1value, "")
+                    return
+                else:
+                    val = val.value
+            symbvalue = type(val)
+            if val is None:
                 symbvalue = "nil"
             elif symbvalue is str:
                 symbvalue = "string"
@@ -464,80 +562,172 @@ class Interpret:
                 symbvalue = "int"
             elif symbvalue is bool:
                 symbvalue = "bool"
-            symbtype = type("")
-            localvar = instruction.arg1value[3:]
-            if instruction.arg1value[0] == 'L':
-                if self.localframe is None:
-                    err_frame_existance()
-                else:
-                    self.localframe.set_var_value(name=localvar, type=symbtype, value=symbvalue)
-            elif instruction.arg1value[0] == 'G':
-                if self.globalframe is None:
-                    err_frame_existance()
-                else:
-                    self.globalframe.set_var_value(name=localvar, type=symbtype, value=symbvalue)
-            elif instruction.arg1value[0] == 'T':
-                if self.tempframe is None:
-                    err_frame_existance()
-                else:
-                    self.tempframe.set_var_value(name=localvar, type=symbtype, value=symbvalue)
+            self.set_var(instruction.arg1value, symbvalue)
         elif instruction.opcode == 'PUSHS':
-            symbvalue = type(self.get_symb_value(instruction.arg1type, instruction.arg1value))
+            symbvalue = self.get_symb_value(instruction.arg1type, instruction.arg1value)
             self.stack.append(symbvalue)
         elif instruction.opcode == 'POPS':
-            if self.stack.count() == 0:
+            if len(self.stack) == 0:
                 err_missing_value()
             symbvalue = self.stack.pop()
-            symbtype = type(symbvalue)
-            localvar = instruction.arg1value[3:]
-            if instruction.arg1value[0] == 'L':
-                if self.localframe is None:
-                    err_frame_existance()
-                else:
-                    self.localframe.set_var_value(name=localvar, type=symbtype, value=symbvalue)
-            elif instruction.arg1value[0] == 'G':
-                if self.globalframe is None:
-                    err_frame_existance()
-                else:
-                    self.globalframe.set_var_value(name=localvar, type=symbtype, value=symbvalue)
-            elif instruction.arg1value[0] == 'T':
-                if self.tempframe is None:
-                    err_frame_existance()
-                else:
-                    self.tempframe.set_var_value(name=localvar, type=symbtype, value=symbvalue)
-
-        '''
-        elif instruction.opcode == 'RETURN':
-        elif instruction.opcode == 'BREAK':
-        elif instruction.opcode == 'INT2CHAR':
-        elif instruction.opcode == 'STRLEN':
-        elif instruction.opcode == 'NOT':
-        elif instruction.opcode == 'POPS':
-        elif instruction.opcode == 'PUSHS':
-        elif instruction.opcode == 'EXIT':
-        elif instruction.opcode == 'CALL':
-        elif instruction.opcode == 'LABEL':
-        elif instruction.opcode == 'JUMP':
-        elif instruction.opcode == 'READ':
+            self.set_var(instruction.arg1value, symbvalue)
         elif instruction.opcode == 'ADD':
+            symb1value = self.get_symb_value(instruction.arg2type, instruction.arg2value)
+            symb2value = self.get_symb_value(instruction.arg3type, instruction.arg3value)
+            self.check_same_int(symb1value, symb2value)
+            self.set_var(instruction.arg1value, symb1value + symb2value)
         elif instruction.opcode == 'SUB':
+            symb1value = self.get_symb_value(instruction.arg2type, instruction.arg2value)
+            symb2value = self.get_symb_value(instruction.arg3type, instruction.arg3value)
+            self.check_same_int(symb1value, symb2value)
+            self.set_var(instruction.arg1value, symb1value - symb2value)
         elif instruction.opcode == 'MUL':
+            symb1value = self.get_symb_value(instruction.arg2type, instruction.arg2value)
+            symb2value = self.get_symb_value(instruction.arg3type, instruction.arg3value)
+            self.check_same_int(symb1value, symb2value)
+            self.set_var(instruction.arg1value, symb1value * symb2value)
         elif instruction.opcode == 'IDIV':
-        elif instruction.opcode == 'AND':
-        elif instruction.opcode == 'OR':
+            symb1value = self.get_symb_value(instruction.arg2type, instruction.arg2value)
+            symb2value = self.get_symb_value(instruction.arg3type, instruction.arg3value)
+            self.check_same_int(symb1value, symb2value)
+            if symb2value == 0:
+                err_operand_value()
+            self.set_var(instruction.arg1value, symb1value // symb2value)
         elif instruction.opcode == 'LT':
+            symb1value = self.get_symb_value(instruction.arg2type, instruction.arg2value)
+            symb2value = self.get_symb_value(instruction.arg3type, instruction.arg3value)
+            self.check_same_symb(symb1value, symb2value)
+            if symb1value is None or symb2value is None:
+                err_bad_operand()
+            self.set_var(instruction.arg1value, symb1value < symb2value)
         elif instruction.opcode == 'GT':
+            symb1value = self.get_symb_value(instruction.arg2type, instruction.arg2value)
+            symb2value = self.get_symb_value(instruction.arg3type, instruction.arg3value)
+            self.check_same_symb(symb1value, symb2value)
+            if symb1value is None or symb2value is None:
+                err_bad_operand()
+            self.set_var(instruction.arg1value, symb1value > symb2value)
         elif instruction.opcode == 'EQ':
+            symb1value = self.get_symb_value(instruction.arg2type, instruction.arg2value)
+            symb2value = self.get_symb_value(instruction.arg3type, instruction.arg3value)
+            if symb1value is None and symb2value is not None:
+                self.set_var(instruction.arg1value, False)
+                return
+            elif symb1value is not None and symb2value is None:
+                self.set_var(instruction.arg1value, False)
+                return
+            self.check_same_symb(symb1value, symb2value)
+            self.set_var(instruction.arg1value, symb1value == symb2value)
+        elif instruction.opcode == 'AND':
+            symb1value = self.get_symb_value(instruction.arg2type, instruction.arg2value)
+            symb2value = self.get_symb_value(instruction.arg3type, instruction.arg3value)
+            self.check_same_bool(symb1value, symb2value)
+            self.set_var(instruction.arg1value, symb1value and symb2value)
+        elif instruction.opcode == 'OR':
+            symb1value = self.get_symb_value(instruction.arg2type, instruction.arg2value)
+            symb2value = self.get_symb_value(instruction.arg3type, instruction.arg3value)
+            self.check_same_bool(symb1value, symb2value)
+            self.set_var(instruction.arg1value, symb1value or symb2value)
+        elif instruction.opcode == 'NOT':
+            symb1value = self.get_symb_value(instruction.arg2type, instruction.arg2value)
+            self.check_same_bool(symb1value, True)
+            self.set_var(instruction.arg1value, not symb1value)
+        elif instruction.opcode == 'INT2CHAR':
+            symb1value = self.get_symb_value(instruction.arg2type, instruction.arg2value)
+            self.check_same_int(symb1value, 0)
+            if symb1value < 0 or symb1value > 1114111:
+                err_string()
+            self.set_var(instruction.arg1value, chr(symb1value))
         elif instruction.opcode == 'STRI2INT':
+            symb1value = self.get_symb_value(instruction.arg2type, instruction.arg2value)
+            symb2value = self.get_symb_value(instruction.arg3type, instruction.arg3value)
+            self.check_same_str(symb1value, "")
+            self.check_same_int(symb2value, 0)
+            if symb2value < 0 or symb2value >= len(symb1value):
+                err_string()
+            self.set_var(instruction.arg1value, ord(symb1value[symb2value]))
+        elif instruction.opcode == 'READ':
+            symb1value = self.inputFile.readline()
+            if not symb1value:
+                symb1value = ''
+            if len(symb1value) > 0 and symb1value[len(symb1value) - 1] == '\n':
+                symb1value = symb1value[:-1]
+            if instruction.arg2value == "bool":
+                if symb1value.upper() == "TRUE":
+                    symb1value = True
+                else:
+                    symb1value = False
+            elif instruction.arg2value == "int":
+                try:
+                    symb1value = int(symb1value)
+                except:
+                    symb1value = 0
+            self.set_var(instruction.arg1value, symb1value)
         elif instruction.opcode == 'CONCAT':
+            symb1value = self.get_symb_value(instruction.arg2type, instruction.arg2value)
+            symb2value = self.get_symb_value(instruction.arg3type, instruction.arg3value)
+            self.check_same_str(symb1value, "")
+            self.check_same_str(symb2value, "")
+            self.set_var(instruction.arg1value, symb1value + symb2value)
         elif instruction.opcode == 'GETCHAR':
+            symb1value = self.get_symb_value(instruction.arg2type, instruction.arg2value)
+            symb2value = self.get_symb_value(instruction.arg3type, instruction.arg3value)
+            self.check_same_str(symb1value, "")
+            self.check_same_int(symb2value, 0)
+            if symb2value < 0 or symb2value >= len(symb1value):
+                err_string()
+            self.set_var(instruction.arg1value, symb1value[symb2value])
         elif instruction.opcode == 'SETCHAR':
+            varvalue = self.get_symb_value(instruction.arg1type, instruction.arg1value)
+            symb1value = self.get_symb_value(instruction.arg2type, instruction.arg2value)
+            symb2value = self.get_symb_value(instruction.arg3type, instruction.arg3value)
+            self.check_same_str(varvalue, "")
+            self.check_same_int(symb1value, 0)
+            self.check_same_str(symb2value, "")
+            if symb1value < 0 or symb1value >= len(varvalue) or len(symb2value) == 0:
+                err_string()
+            if symb1value > 0:
+                varvalue = varvalue[:symb1value] + symb2value[0] + varvalue[1 + symb1value:]
+            else:
+                varvalue = symb2value[0] + varvalue[1 + symb1value:]
+            self.set_var(instruction.arg1value, varvalue)
+        elif instruction.opcode == 'STRLEN':
+            symb1value = self.get_symb_value(instruction.arg2type, instruction.arg2value)
+            self.check_same_str(symb1value, "")
+            self.set_var(instruction.arg1value, len(symb1value))
+        elif instruction.opcode == 'EXIT':
+            symb1value = self.get_symb_value(instruction.arg1type, instruction.arg1value)
+            self.check_same_int(symb1value, 0)
+            if symb1value < 0 or symb1value > 49:
+                err_operand_value()
+            exit(symb1value)
+        elif instruction.opcode == 'BREAK':
+            print('PC counter: ' + str(self.pc_counter), file=sys.stderr)
+        elif instruction.opcode == 'LABEL':
+            return
+        elif instruction.opcode == 'CALL':
+            if instruction.arg1value not in self.labels:
+                err_semantic()
+            self.pc_stack.append(self.pc_counter)
+            self.pc_counter = self.labels[instruction.arg1value]
+        elif instruction.opcode == 'RETURN':
+            if len(self.pc_stack) == 0:
+                err_missing_value()
+            self.pc_counter = self.pc_stack.pop()
+        elif instruction.opcode == 'JUMP':
+            self.pc_counter = self.labels[instruction.arg1value]
         elif instruction.opcode == 'JUMPIFEQ':
+            symb1value = self.get_symb_value(instruction.arg2type, instruction.arg2value)
+            symb2value = self.get_symb_value(instruction.arg3type, instruction.arg3value)
+            self.check_same_symb(symb1value, symb2value)
+            if symb1value == symb2value:
+                self.pc_counter = self.labels[instruction.arg1value]
         elif instruction.opcode == 'JUMPIFNEQ':
-        else:
-            print("Ty píčo, tudle neznám!")
-            exit(-99)
-            '''
+            symb1value = self.get_symb_value(instruction.arg2type, instruction.arg2value)
+            symb2value = self.get_symb_value(instruction.arg3type, instruction.arg3value)
+            self.check_same_symb(symb1value, symb2value)
+            if symb1value != symb2value:
+                self.pc_counter = self.labels[instruction.arg1value]
 
 
 Interpret()
