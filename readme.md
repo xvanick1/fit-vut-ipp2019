@@ -110,11 +110,11 @@ Hodnocení je individuálně vygenerováno pro každého studenta, doplněno o r
 automaticky rozesláno na školní email.
 
 Hodnocené části (nehodnocené části jsou vynechány):
-1) Automatické testy interpret.py - základní.
-2) Automatické testy interpret.py - registrovaná rozšíření.
-3) Automatické testy test.php (základní a registrovaná rozšíření) včetně ručního zhodnocení kvalit vytvořených HTML reportů.
-4) Případné malusy a bonusy (pozdní odevzdání, příspěvky na fóru, ...).
-5) Hodnocení dokumentace readme2(.pdf/.md) a štábní kultury zdrojových kódů (především komentářů).
+1)Automatické testy interpret.py - základní.
+2)Automatické testy interpret.py - registrovaná rozšíření.
+3)Automatické testy test.php (základní a registrovaná rozšíření) včetně ručního zhodnocení kvalit vytvořených HTML reportů.
+4)Případné malusy a bonusy (pozdní odevzdání, příspěvky na fóru, ...).
+5)Hodnocení dokumentace readme2(.pdf/.md) a štábní kultury zdrojových kódů (především komentářů).
 
    Následuje seznam zkratek, které se mohou vyskytnout v komentářích k hodnocení test.php:
      OK = výstupy byly v pořádku
